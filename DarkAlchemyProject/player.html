@@ -353,23 +353,20 @@
             }
 
             // Set timeout to show error if connection doesn't complete
+            // Increased timeout for Render free tier (may be slow on first request)
             connectionTimeoutId = setTimeout(() => {
                 console.warn('Connection timeout - no response received');
                 const errorMsg = document.getElementById('error-msg');
                 if (errorMsg) {
-                    // Check if we're on localhost (same device) or remote (cross-device)
-                    const isLocalhost = window.location.hostname === 'localhost' || 
-                                       window.location.hostname === '127.0.0.1' ||
-                                       window.location.hostname.startsWith('192.168.') ||
-                                       window.location.hostname.startsWith('10.') ||
-                                       window.location.hostname.startsWith('172.');
+                    // Check if server is configured and connected
+                    const hasServer = window.GAME_SERVER_URL || (channel && channel.connected);
                     
-                    if (isLocalhost) {
-                        // Same device/network - might just be wrong code or host hasn't created session
-                        errorMsg.innerText = 'Connection failed. Make sure: 1) The host has created a session, 2) You\'re using the correct code, 3) Both are on the same device/tab.';
+                    if (hasServer) {
+                        // Server is configured - connection issue
+                        errorMsg.innerText = 'Connection timeout. Please check: 1) The host has created a session, 2) You\'re using the correct session code, 3) Server is running. If using Render free tier, wait a moment and try again (first request may be slow).';
                     } else {
-                        // Cross-device - needs server
-                        errorMsg.innerText = 'Cross-device play requires a server. To test locally: Run "npm start" on your laptop, then access from phone using your laptop\'s IP address.';
+                        // No server configured
+                        errorMsg.innerText = 'Connection failed. Make sure: 1) The host has created a session, 2) You\'re using the correct code, 3) Both are on the same device/tab.';
                     }
                     errorMsg.style.display = 'block';
                 }
@@ -379,7 +376,7 @@
                     const btnText = btnJoin.querySelector('.btn-text');
                     if (btnText) btnText.innerText = 'ENTER';
                 }
-            }, 5000); // 5 second timeout
+            }, 10000); // 10 second timeout (Render free tier can be slow)
 
             // Send Join Request
             try {

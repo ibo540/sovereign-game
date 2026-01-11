@@ -76,8 +76,15 @@ class DualChannel {
             });
 
             this.socket.on('connect_error', (error) => {
-                console.warn('Connection error, falling back to local mode:', error);
-                this.initLocal();
+                console.error('Connection error to server:', error);
+                console.warn('Falling back to local mode. Server may be unavailable or sleeping (Render free tier).');
+                // Don't immediately fall back - keep trying to connect
+                // Only fall back if connection fails multiple times
+                this.reconnectAttempts++;
+                if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                    console.warn('Max reconnection attempts reached, falling back to local mode');
+                    this.initLocal();
+                }
             });
 
             // Listen for game messages
