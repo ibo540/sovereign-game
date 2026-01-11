@@ -29,13 +29,13 @@ class DualChannel {
             console.log('Using configured server URL:', window.GAME_SERVER_URL);
             return window.GAME_SERVER_URL;
         }
-        
+
         // Auto-detect: if running on localhost, use local server
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             console.log('Auto-detected localhost, using local server');
             return 'http://localhost:3000';
         }
-        
+
         // For production, use same origin (server should be on same domain)
         // Or set window.GAME_SERVER_URL in your HTML
         console.warn('No server URL configured. Falling back to local mode (same device only).');
@@ -61,12 +61,12 @@ class DualChannel {
     connectWebSocket() {
         try {
             console.log('Attempting to connect to server:', this.serverUrl);
-            
+
             // Wake up Render server if it's sleeping (free tier)
             fetch(`${this.serverUrl}/health`)
                 .then(() => console.log('Server health check passed'))
                 .catch(err => console.warn('Server health check failed (may be sleeping):', err));
-            
+
             this.socket = io(this.serverUrl, {
                 transports: ['websocket', 'polling'],
                 reconnection: true,
@@ -80,6 +80,12 @@ class DualChannel {
                 console.log('✅ Connected to game server');
                 this.connected = true;
                 this.reconnectAttempts = 0;
+
+                // Pitality Check: Identify as session host if we have a code
+                if (this.currentSessionCode) {
+                    console.log('🔄 Re-registering session:', this.currentSessionCode);
+                    this.socket.emit('CREATE_SESSION', { code: this.currentSessionCode });
+                }
             });
 
             this.socket.on('disconnect', () => {
@@ -185,17 +191,20 @@ class DualChannel {
 
     // Method to create session on server (for host)
     createSession(code) {
-        if (this.connected && this.socket) {
+        this.currentSessionCode = code; // Store for reconnection
+
+        if (this.socket) {
+            // Socket.io buffers packets if disconnected, so we can emit immediately
             this.socket.emit('CREATE_SESSION', { code });
-        } else {
-            // Fallback: just send via local channel
-            this.send({ type: 'CREATE_SESSION', code });
         }
+
+        // Also send locally for self-loopback or same-device
+        this.send({ type: 'CREATE_SESSION', code }); // Fallback/Local
     }
 
     // Method to explicitly join a session (for players)
     joinSession(code, name) {
-        if (this.connected && this.socket) {
+        if (this.socket) {
             this.socket.emit('JOIN_REQUEST', { code, name });
         } else {
             // Fallback: send via local channel
