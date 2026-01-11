@@ -354,6 +354,22 @@
                 if (btnText) btnText.innerText = 'CONNECTING...';
             }
 
+            // Set timeout to show error if connection doesn't complete
+            connectionTimeoutId = setTimeout(() => {
+                console.warn('Connection timeout - no response received');
+                const errorMsg = document.getElementById('error-msg');
+                if (errorMsg) {
+                    errorMsg.innerText = 'Connection timeout. Make sure the host has created a session and you\'re using the correct code.';
+                    errorMsg.style.display = 'block';
+                }
+                if (btnJoin) {
+                    btnJoin.disabled = false;
+                    btnJoin.style.opacity = '1';
+                    const btnText = btnJoin.querySelector('.btn-text');
+                    if (btnText) btnText.innerText = 'ENTER';
+                }
+            }, 10000); // 10 second timeout
+
             // Send Join Request
             try {
                 if (!channel) {
@@ -371,8 +387,18 @@
                     throw new Error('Channel has no send or joinSession method');
                 }
             } catch (error) {
+                if (connectionTimeoutId) {
+                    clearTimeout(connectionTimeoutId);
+                    connectionTimeoutId = null;
+                }
                 console.error('Error sending join request:', error);
-                alert('Error connecting: ' + error.message);
+                const errorMsg = document.getElementById('error-msg');
+                if (errorMsg) {
+                    errorMsg.innerText = 'Error: ' + error.message;
+                    errorMsg.style.display = 'block';
+                } else {
+                    alert('Error connecting: ' + error.message);
+                }
                 if (btnJoin) {
                     btnJoin.disabled = false;
                     btnJoin.style.opacity = '1';
