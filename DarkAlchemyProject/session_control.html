@@ -635,7 +635,7 @@
 
                 // Primary method: Use QR code API (more reliable)
                 if (qrImg) {
-                    const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}&color=FFD700&bgcolor=000000`;
+                    const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}&color=FFFFFF&bgcolor=000000`;
                     
                     qrImg.src = apiUrl;
                     qrImg.onload = function() {
@@ -661,7 +661,7 @@
                         QRCode.toCanvas(qrCanvas, qrData, {
                             width: 200,
                             height: 200,
-                            colorDark: '#FFD700',
+                            colorDark: '#FFFFFF',
                             colorLight: '#000000',
                             correctLevel: QRCode.CorrectLevel.H,
                             margin: 2

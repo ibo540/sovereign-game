@@ -97,16 +97,16 @@
             <!-- STAGE 1: LOGIN -->
             <div id="player-login" class="screen-section" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh;">
                 <h2 class="prompt-text" style="font-family: 'Cinzel', serif; font-size: 2.5vw; color: #ffd700; margin-bottom: 4vh; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); letter-spacing: 3px;">Join Session</h2>
-                <div class="player-form">
+                <form class="player-form" id="join-form" onsubmit="event.preventDefault(); joinSession(); return false;">
                     <input type="text" id="input-code" class="input-field" placeholder="SESSION CODE" maxlength="4"
-                        style="text-transform:uppercase;">
-                    <input type="text" id="input-name" class="input-field" placeholder="YOUR NAME" maxlength="12">
-                    <button id="btn-join" class="alchemy-btn" style="width: 100%; max-width: 100%; margin-top: 2vh; height: 60px;">
+                        style="text-transform:uppercase;" required autocomplete="off">
+                    <input type="text" id="input-name" class="input-field" placeholder="YOUR NAME" maxlength="12" required autocomplete="off">
+                    <button type="submit" id="btn-join" class="alchemy-btn" style="width: 100%; max-width: 100%; margin-top: 2vh; height: 60px; -webkit-tap-highlight-color: transparent;">
                         <img src="assets/button_pro.svg" class="btn-bg" alt="">
                         <span class="btn-text">ENTER</span>
                     </button>
                     <p id="error-msg" style="color:#ff3333; display:none; margin-top: 1.5vh; font-family: 'Roboto Mono', monospace; text-align: center; font-size: 0.9rem; letter-spacing: 1px;">Invalid Code</p>
-                </div>
+                </form>
             </div>
 
             <!-- STAGE 2: WAITING LOBBY -->
@@ -294,16 +294,57 @@
             }
         });
 
-        btnJoin.onclick = () => {
-            joinSession();
-        };
+        // Handle both click and touch events for mobile
+        if (btnJoin) {
+            btnJoin.onclick = (e) => {
+                e.preventDefault();
+                joinSession();
+            };
+            btnJoin.ontouchstart = (e) => {
+                e.preventDefault();
+                joinSession();
+            };
+        }
+
+        // Handle Enter key press on inputs
+        if (inputCode) {
+            inputCode.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    inputName.focus();
+                }
+            });
+        }
+
+        if (inputName) {
+            inputName.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    joinSession();
+                }
+            });
+        }
+
+        // Handle form submission
+        const joinForm = document.getElementById('join-form');
+        if (joinForm) {
+            joinForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                joinSession();
+                return false;
+            });
+        }
 
         function joinSession() {
             const code = document.getElementById('input-code').value.toUpperCase();
             const name = document.getElementById('input-name').value.trim();
 
             if (!code || !name) {
-                alert("Code and Name required!");
+                const errorMsg = document.getElementById('error-msg');
+                if (errorMsg) {
+                    errorMsg.innerText = "Code and Name required!";
+                    errorMsg.style.display = 'block';
+                }
                 return;
             }
 
