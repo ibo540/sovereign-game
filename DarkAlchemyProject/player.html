@@ -285,6 +285,15 @@
         const btnJoin = document.getElementById('btn-join');
         const errorMsg = document.getElementById('error-msg');
 
+        // Auto-fill session code from URL parameter
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const codeParam = urlParams.get('code');
+            if (codeParam && inputCode) {
+                inputCode.value = codeParam.toUpperCase();
+            }
+        });
+
         btnJoin.onclick = () => {
             joinSession();
         };
