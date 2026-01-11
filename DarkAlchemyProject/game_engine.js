@@ -140,6 +140,30 @@ class GameSession {
             this.protestLevel = Math.min(100, this.protestLevel + 5);
             // Broadcast immediate update for responsiveness
             this.channel.send({ type: 'PROTEST_LEVEL', level: this.protestLevel });
+        } else if (msg.type === 'STATE_UPDATE') {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:143',message:'Game engine received STATE_UPDATE from server',data:{msgPlayerCount:msg.playerCount,msgSessionCode:msg.sessionCode,engineSessionCode:this.sessionCode,enginePlayersLength:this.players.length,shouldUpdate:msg.sessionCode===this.sessionCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D,E'})}).catch(()=>{});
+            // #endregion
+            // Update player count from server if session codes match
+            if (msg.sessionCode === this.sessionCode && msg.playerCount !== undefined) {
+                // Sync player count from server
+                const serverPlayerCount = msg.playerCount;
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:149',message:'Game engine syncing player count from server',data:{serverPlayerCount:serverPlayerCount,enginePlayersLength:this.players.length,beforeUpdate:this.players.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                // #endregion
+                // Update local players array to match server (for display)
+                // Note: Server manages actual player list, we just sync count for UI
+                while (this.players.length < serverPlayerCount) {
+                    this.players.push({ name: `Player ${this.players.length + 1}`, role: null });
+                }
+                while (this.players.length > serverPlayerCount) {
+                    this.players.pop();
+                }
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:159',message:'Game engine synced player count',data:{afterUpdate:this.players.length,serverPlayerCount:serverPlayerCount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                // #endregion
+                this.updateUI();
+            }
         }
     }
 
