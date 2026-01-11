@@ -25,6 +25,28 @@ body {
     /* Hide default cursor */
 }
 
+/* Show default cursor on mobile/touch devices */
+@media (hover: none) and (pointer: coarse) {
+    body {
+        cursor: auto;
+    }
+    
+    #custom-cursor {
+        display: none !important;
+    }
+}
+
+/* Hide custom cursor on touch devices */
+@media (max-width: 768px) {
+    body {
+        cursor: auto;
+    }
+    
+    #custom-cursor {
+        display: none !important;
+    }
+}
+
 /* Custom DOM Cursor */
 #custom-cursor {
     position: fixed;

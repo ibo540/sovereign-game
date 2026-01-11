@@ -189,16 +189,29 @@ let mouseY = window.innerHeight / 2;
 let targetMouseX = mouseX;
 let targetMouseY = mouseY;
 
+// Detect if device is touch-enabled (mobile/tablet)
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
 document.addEventListener('mousemove', (e) => {
     targetMouseX = e.clientX;
     targetMouseY = canvas.height - e.clientY;
 
-    // Update Custom Cursor Position (Directly for responsiveness)
-    const cursor = document.getElementById('custom-cursor');
-    if (cursor) {
-        cursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+    // Update Custom Cursor Position (only on non-touch devices)
+    if (!isTouchDevice) {
+        const cursor = document.getElementById('custom-cursor');
+        if (cursor) {
+            cursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        }
     }
 });
+
+// Hide custom cursor on touch devices
+if (isTouchDevice) {
+    const cursor = document.getElementById('custom-cursor');
+    if (cursor) {
+        cursor.style.display = 'none';
+    }
+}
 
 window.addEventListener('resize', resize);
 function resize() {
