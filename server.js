@@ -181,9 +181,11 @@ io.on('connection', (socket) => {
           }, 30000); // 30 second grace period
         } else {
           // Notify others that player left
+          const playerNames = Array.from(session.players).map(p => p.name);
           io.to(socket.sessionCode).emit('STATE_UPDATE', {
             type: 'STATE_UPDATE',
             playerCount: session.players.size,
+            players: playerNames, // Send actual player names
             sessionCode: socket.sessionCode
           });
         }
