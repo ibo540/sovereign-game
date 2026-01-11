@@ -355,30 +355,33 @@
             }
 
             // Set timeout to show error if connection doesn't complete
-            // Only set timeout if we're not in pure local mode (BroadcastChannel only)
-            const isLocalOnly = !channel.connected && typeof channel.joinSession !== 'function' && channel.bc;
-            if (!isLocalOnly) {
-                connectionTimeoutId = setTimeout(() => {
-                    console.warn('Connection timeout - no response received');
-                    const errorMsg = document.getElementById('error-msg');
-                    if (errorMsg) {
-                        // Check if we're trying to connect cross-device without server
-                        const isCrossDevice = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-                        if (isCrossDevice) {
-                            errorMsg.innerText = 'Cross-device connection requires a server. Please ensure the host has created a session on the same device, or set up a WebSocket server.';
-                        } else {
-                            errorMsg.innerText = 'Connection timeout. Make sure the host has created a session and you\'re using the correct code.';
-                        }
-                        errorMsg.style.display = 'block';
+            connectionTimeoutId = setTimeout(() => {
+                console.warn('Connection timeout - no response received');
+                const errorMsg = document.getElementById('error-msg');
+                if (errorMsg) {
+                    // Check if we're on localhost (same device) or remote (cross-device)
+                    const isLocalhost = window.location.hostname === 'localhost' || 
+                                       window.location.hostname === '127.0.0.1' ||
+                                       window.location.hostname.startsWith('192.168.') ||
+                                       window.location.hostname.startsWith('10.') ||
+                                       window.location.hostname.startsWith('172.');
+                    
+                    if (isLocalhost) {
+                        // Same device/network - might just be wrong code or host hasn't created session
+                        errorMsg.innerText = 'Connection failed. Make sure: 1) The host has created a session, 2) You\'re using the correct code, 3) Both are on the same device/tab.';
+                    } else {
+                        // Cross-device - needs server
+                        errorMsg.innerText = 'Cross-device play requires a server. To test locally: Run "npm start" on your laptop, then access from phone using your laptop\'s IP address.';
                     }
-                    if (btnJoin) {
-                        btnJoin.disabled = false;
-                        btnJoin.style.opacity = '1';
-                        const btnText = btnJoin.querySelector('.btn-text');
-                        if (btnText) btnText.innerText = 'ENTER';
-                    }
-                }, 5000); // Reduced to 5 seconds
-            }
+                    errorMsg.style.display = 'block';
+                }
+                if (btnJoin) {
+                    btnJoin.disabled = false;
+                    btnJoin.style.opacity = '1';
+                    const btnText = btnJoin.querySelector('.btn-text');
+                    if (btnText) btnText.innerText = 'ENTER';
+                }
+            }, 5000); // 5 second timeout
 
             // Send Join Request
             try {
@@ -394,33 +397,7 @@
                     channel.send({ type: 'JOIN_REQUEST', code: code, name: name });
                     console.log('Join request sent via local channel');
                     
-                    // Check if we're trying cross-device without server
-                    const isCrossDevice = window.location.hostname !== 'localhost' && 
-                                         window.location.hostname !== '127.0.0.1' &&
-                                         !window.location.hostname.startsWith('192.168.') &&
-                                         !window.location.hostname.startsWith('10.') &&
-                                         !window.location.hostname.startsWith('172.');
-                    
-                    if (isCrossDevice) {
-                        // Cross-device attempt without server - show helpful message quickly
-                        setTimeout(() => {
-                            if (connectionTimeoutId) {
-                                clearTimeout(connectionTimeoutId);
-                                connectionTimeoutId = null;
-                            }
-                            const errorMsg = document.getElementById('error-msg');
-                            if (errorMsg) {
-                                errorMsg.innerText = 'Cross-device play requires a WebSocket server. Please join from the same device as the host.';
-                                errorMsg.style.display = 'block';
-                            }
-                            if (btnJoin) {
-                                btnJoin.disabled = false;
-                                btnJoin.style.opacity = '1';
-                                const btnText = btnJoin.querySelector('.btn-text');
-                                if (btnText) btnText.innerText = 'ENTER';
-                            }
-                        }, 2000);
-                    }
+                    // Note: Cross-device detection removed - let the timeout handle it with better messaging
                 } else {
                     throw new Error('Channel has no send or joinSession method');
                 }
