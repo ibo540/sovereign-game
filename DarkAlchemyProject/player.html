@@ -331,45 +331,15 @@
                 }
             }
 
-            // Simplified button handler - direct function call
-            function handleJoin() {
-                console.log('Button pressed - calling joinSession');
-                joinSession();
-            }
-
-            // Multiple ways to trigger join - maximum compatibility
+            // Simple, reliable button handler
             if (btnJoin) {
-                // Method 1: Direct onclick (most reliable)
                 btnJoin.onclick = function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('onclick triggered');
-                    handleJoin();
+                    console.log('Button clicked - calling joinSession');
+                    joinSession();
                     return false;
                 };
-
-                // Method 2: Touch events for mobile
-                btnJoin.addEventListener('touchstart', function(e) {
-                    e.preventDefault();
-                    console.log('touchstart triggered');
-                }, { passive: false });
-
-                btnJoin.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('touchend triggered');
-                    handleJoin();
-                    return false;
-                }, { passive: false });
-
-                // Method 3: Click event listener (backup)
-                btnJoin.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('click event listener triggered');
-                    handleJoin();
-                    return false;
-                }, { passive: false, capture: true });
             }
 
             // Handle Enter key press on inputs
@@ -450,17 +420,23 @@
 
             // Send Join Request
             try {
+                if (!channel) {
+                    throw new Error('Channel not initialized. Please refresh the page.');
+                }
+                
                 // Use joinSession method if available (WebSocket), otherwise use send
-                if (channel && typeof channel.joinSession === 'function') {
+                if (typeof channel.joinSession === 'function') {
                     channel.joinSession(code, name);
                     console.log('Join request sent via WebSocket');
-                } else {
+                } else if (typeof channel.send === 'function') {
                     channel.send({ type: 'JOIN_REQUEST', code: code, name: name });
                     console.log('Join request sent via local channel');
+                } else {
+                    throw new Error('Channel has no send or joinSession method');
                 }
             } catch (error) {
                 console.error('Error sending join request:', error);
-                alert('Error connecting. Please try again.');
+                alert('Error connecting: ' + error.message);
                 if (btnJoin) {
                     btnJoin.disabled = false;
                     btnJoin.style.opacity = '1';
