@@ -173,9 +173,14 @@ setInterval(() => {
   }
 }, 600000); // Check every 10 minutes
 
-// Start server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Dark Alchemy Game Server running on port ${PORT}`);
-  console.log(`📡 WebSocket server ready for connections`);
-});
+// Export for Vercel serverless
+module.exports = app;
+
+// Start server locally (for development)
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => {
+    console.log(`🚀 Dark Alchemy Game Server running on port ${PORT}`);
+    console.log(`📡 WebSocket server ready for connections`);
+  });
+}
