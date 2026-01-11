@@ -464,6 +464,7 @@ body {
     z-index: 1;
     opacity: 0.8;
     transition: opacity 0.3s;
+    pointer-events: none;
 }
 
 .alchemy-btn:hover .btn-bg {
@@ -476,6 +477,20 @@ body {
     z-index: 10;
     /* CRITICAL: Ensure text is above everything */
     text-shadow: 0 2px 4px black;
+    pointer-events: none;
+}
+
+/* Mobile button fixes */
+@media (hover: none) and (pointer: coarse) {
+    .alchemy-btn {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        user-select: none;
+    }
+    
+    .alchemy-btn:active {
+        transform: scale(0.98);
+    }
 }
 
 .btn-icon {

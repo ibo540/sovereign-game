@@ -294,16 +294,34 @@
             }
         });
 
-        // Handle both click and touch events for mobile
+        // Handle both click and touch events for mobile - use addEventListener for better compatibility
         if (btnJoin) {
-            btnJoin.onclick = (e) => {
+            // Remove any existing handlers
+            btnJoin.onclick = null;
+            btnJoin.ontouchstart = null;
+            
+            // Function to handle button press
+            const handleButtonPress = (e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                
+                // Add visual feedback
+                btnJoin.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    btnJoin.style.transform = '';
+                }, 100);
+                
                 joinSession();
+                return false;
             };
-            btnJoin.ontouchstart = (e) => {
+            
+            // Add multiple event listeners for maximum compatibility
+            btnJoin.addEventListener('click', handleButtonPress, { passive: false });
+            btnJoin.addEventListener('touchend', handleButtonPress, { passive: false });
+            btnJoin.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                joinSession();
-            };
+            }, { passive: false });
         }
 
         // Handle Enter key press on inputs
@@ -336,8 +354,20 @@
         }
 
         function joinSession() {
-            const code = document.getElementById('input-code').value.toUpperCase();
-            const name = document.getElementById('input-name').value.trim();
+            console.log('joinSession called'); // Debug log
+            
+            const codeInput = document.getElementById('input-code');
+            const nameInput = document.getElementById('input-name');
+            
+            if (!codeInput || !nameInput) {
+                console.error('Input fields not found');
+                return;
+            }
+            
+            const code = codeInput.value.toUpperCase().trim();
+            const name = nameInput.value.trim();
+
+            console.log('Code:', code, 'Name:', name); // Debug log
 
             if (!code || !name) {
                 const errorMsg = document.getElementById('error-msg');
@@ -350,6 +380,8 @@
 
             myCode = code;
             myName = name;
+            
+            console.log('Sending join request...'); // Debug log
 
             // Visual Feedback (simplified for this context, original had more)
             // document.getElementById('entry-screen').innerHTML = `
