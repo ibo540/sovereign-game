@@ -91,9 +91,12 @@ io.on('connection', (socket) => {
     console.log(`JOIN_SUCCESS sent to ${socket.id}`);
 
     // Broadcast player count update to all in session
+    // Include actual player names so UI can display them
+    const playerNames = Array.from(session.players).map(p => p.name);
     const stateUpdate = {
       type: 'STATE_UPDATE',
       playerCount: session.players.size,
+      players: playerNames, // Send actual player names
       sessionCode: sessionCode
     };
     // #region agent log
