@@ -276,91 +276,113 @@
         let myRole = '';
         let myCode = '';
 
-        // UI References
-        const screenLogin = document.getElementById('player-login');
-        const screenWait = document.getElementById('player-waiting');
-        const screenDash = document.getElementById('player-dash');
-        const inputCode = document.getElementById('input-code');
-        const inputName = document.getElementById('input-name');
-        const btnJoin = document.getElementById('btn-join');
-        const errorMsg = document.getElementById('error-msg');
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // UI References
+            const screenLogin = document.getElementById('player-login');
+            const screenWait = document.getElementById('player-waiting');
+            const screenDash = document.getElementById('player-dash');
+            const inputCode = document.getElementById('input-code');
+            const inputName = document.getElementById('input-name');
+            const btnJoin = document.getElementById('btn-join');
+            const errorMsg = document.getElementById('error-msg');
 
-        // Auto-fill session code from URL parameter
-        window.addEventListener('DOMContentLoaded', () => {
+            // Auto-fill session code from URL parameter
             const urlParams = new URLSearchParams(window.location.search);
             const codeParam = urlParams.get('code');
             if (codeParam && inputCode) {
                 inputCode.value = codeParam.toUpperCase();
+                // Auto-focus on name field for better mobile UX
+                if (inputName) {
+                    setTimeout(() => inputName.focus(), 100);
+                }
+            }
+
+            // Simplified button handler - direct function call
+            function handleJoin() {
+                console.log('Button pressed - calling joinSession');
+                joinSession();
+            }
+
+            // Multiple ways to trigger join - maximum compatibility
+            if (btnJoin) {
+                // Method 1: Direct onclick (most reliable)
+                btnJoin.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('onclick triggered');
+                    handleJoin();
+                    return false;
+                };
+
+                // Method 2: Touch events for mobile
+                btnJoin.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    console.log('touchstart triggered');
+                }, { passive: false });
+
+                btnJoin.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('touchend triggered');
+                    handleJoin();
+                    return false;
+                }, { passive: false });
+
+                // Method 3: Click event listener (backup)
+                btnJoin.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('click event listener triggered');
+                    handleJoin();
+                    return false;
+                }, { passive: false, capture: true });
             }
         });
 
-        // Handle both click and touch events for mobile - use addEventListener for better compatibility
-        if (btnJoin) {
-            // Remove any existing handlers
-            btnJoin.onclick = null;
-            btnJoin.ontouchstart = null;
-            
-            // Function to handle button press
-            const handleButtonPress = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                
-                // Add visual feedback
-                btnJoin.style.transform = 'scale(0.98)';
-                setTimeout(() => {
-                    btnJoin.style.transform = '';
-                }, 100);
-                
-                joinSession();
-                return false;
-            };
-            
-            // Add multiple event listeners for maximum compatibility
-            btnJoin.addEventListener('click', handleButtonPress, { passive: false });
-            btnJoin.addEventListener('touchend', handleButtonPress, { passive: false });
-            btnJoin.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-            }, { passive: false });
-        }
+            // Handle Enter key press on inputs (moved inside DOMContentLoaded)
+            if (inputCode) {
+                inputCode.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (inputName) inputName.focus();
+                    }
+                });
+            }
 
-        // Handle Enter key press on inputs
-        if (inputCode) {
-            inputCode.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    inputName.focus();
-                }
-            });
-        }
+            if (inputName) {
+                inputName.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        joinSession();
+                    }
+                });
+            }
 
-        if (inputName) {
-            inputName.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
+            // Handle form submission (moved inside DOMContentLoaded)
+            const joinForm = document.getElementById('join-form');
+            if (joinForm) {
+                joinForm.addEventListener('submit', (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Form submit triggered');
                     joinSession();
-                }
-            });
-        }
+                    return false;
+                }, { passive: false });
+            }
+        });
 
-        // Handle form submission
-        const joinForm = document.getElementById('join-form');
-        if (joinForm) {
-            joinForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                joinSession();
-                return false;
-            });
-        }
-
+        // Make joinSession globally accessible - define it outside DOMContentLoaded
         function joinSession() {
-            console.log('joinSession called'); // Debug log
+            console.log('=== joinSession called ==='); // Debug log
             
             const codeInput = document.getElementById('input-code');
             const nameInput = document.getElementById('input-name');
+            const btnJoin = document.getElementById('btn-join');
             
             if (!codeInput || !nameInput) {
                 console.error('Input fields not found');
+                alert('Input fields not found. Please refresh the page.');
                 return;
             }
             
@@ -374,6 +396,8 @@
                 if (errorMsg) {
                     errorMsg.innerText = "Code and Name required!";
                     errorMsg.style.display = 'block';
+                } else {
+                    alert("Code and Name required!");
                 }
                 return;
             }
@@ -381,18 +405,35 @@
             myCode = code;
             myName = name;
             
-            console.log('Sending join request...'); // Debug log
+            console.log('Sending join request to channel...'); // Debug log
+            console.log('Channel object:', channel); // Debug log
 
-            // Visual Feedback (simplified for this context, original had more)
-            // document.getElementById('entry-screen').innerHTML = `
-            //     <h2>Connecting...</h2>
-            //     <div class="loader"></div>
-            //     <p>Wait for Lobby...</p>
-            // `;
+            // Show loading state
+            if (btnJoin) {
+                btnJoin.disabled = true;
+                btnJoin.style.opacity = '0.6';
+                const btnText = btnJoin.querySelector('.btn-text');
+                if (btnText) btnText.innerText = 'CONNECTING...';
+            }
 
             // Send Join Request
-            channel.send({ type: 'JOIN_REQUEST', code: code, name: name });
+            try {
+                channel.send({ type: 'JOIN_REQUEST', code: code, name: name });
+                console.log('Join request sent successfully');
+            } catch (error) {
+                console.error('Error sending join request:', error);
+                alert('Error connecting. Please try again.');
+                if (btnJoin) {
+                    btnJoin.disabled = false;
+                    btnJoin.style.opacity = '1';
+                    const btnText = btnJoin.querySelector('.btn-text');
+                    if (btnText) btnText.innerText = 'ENTER';
+                }
+            }
         }
+        
+        // Also make it globally accessible
+        window.joinSession = joinSession;
 
         function handleMessage(msg) {
             if (!msg) return;
