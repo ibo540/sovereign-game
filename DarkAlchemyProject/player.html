@@ -241,34 +241,80 @@
     </script>
     <script>
         // --- Core Player Logic ---
-        // Use WebSocket channel if available, otherwise fall back to local
+        let myName = '';
+        let myRole = '';
+        let myCode = '';
         let channel;
+        let screenLogin, screenWait, screenDash; // Declare globally for handleMessage
+
+        // Define handleMessage BEFORE creating channel
+        function handleMessage(msg) {
+            if (!msg) return;
+            console.log("Received:", msg);
+
+            if (msg.type === 'JOIN_SUCCESS' && msg.name === myName) {
+                // Login Successful
+                if (screenLogin) screenLogin.classList.add('hidden');
+                if (screenWait) screenWait.classList.remove('hidden');
+            } else if (msg.type === 'ROUND_RESULT') {
+                document.body.classList.remove('leader-mode'); // Reset by default, re-add if leader
+
+                // Case 1: Leader Victory
+                // Note: Logic assumes msg.success means "Regime Survived" for Leader
+                if (myRole === 'leader' && msg.success) {
+                    document.body.classList.add('leader-mode');
+                    // Show victory screen (implementation continues below)
+                }
+                // ... other message handlers will be added below
+            } else if (msg.type === 'ROLE_ASSIGNMENT' && msg.target === myName) {
+                myRole = msg.role;
+                // Handle role assignment (implementation continues below)
+            } else if (msg.type === 'ERROR') {
+                const errorMsg = document.getElementById('error-msg');
+                if (errorMsg) {
+                    errorMsg.innerText = msg.message || 'Connection error';
+                    errorMsg.style.display = 'block';
+                }
+                const btnJoin = document.getElementById('btn-join');
+                if (btnJoin) {
+                    btnJoin.disabled = false;
+                    btnJoin.style.opacity = '1';
+                    const btnText = btnJoin.querySelector('.btn-text');
+                    if (btnText) btnText.innerText = 'ENTER';
+                }
+            }
+        }
+
+        // Create channel AFTER handleMessage is defined
         if (typeof DualChannel !== 'undefined') {
             channel = new DualChannel('dark_alchemy_session', handleMessage);
         } else {
-            // Fallback: create local channel
+            // Fallback: create local channel with all needed methods
             console.warn('WebSocket channel not available, using local mode');
+            let bc = null;
+            if (window.BroadcastChannel) {
+                bc = new BroadcastChannel('dark_alchemy_session');
+                bc.onmessage = (ev) => handleMessage(ev.data);
+            }
+            
             channel = {
                 send: (data) => {
-                    if (window.BroadcastChannel) {
-                        const bc = new BroadcastChannel('dark_alchemy_session');
-                        bc.postMessage(data);
-                    }
+                    if (bc) bc.postMessage(data);
                     localStorage.setItem('DA_MSG_dark_alchemy_session', JSON.stringify(data));
+                },
+                joinSession: (code, name) => {
+                    // For local mode, just send as regular message
+                    channel.send({ type: 'JOIN_REQUEST', code: code, name: name });
                 }
             };
         }
 
-        let myName = '';
-        let myRole = '';
-        let myCode = '';
-
         // Wait for DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', function() {
-            // UI References
-            const screenLogin = document.getElementById('player-login');
-            const screenWait = document.getElementById('player-waiting');
-            const screenDash = document.getElementById('player-dash');
+            // UI References (assign to global variables declared above)
+            screenLogin = document.getElementById('player-login');
+            screenWait = document.getElementById('player-waiting');
+            screenDash = document.getElementById('player-dash');
             const inputCode = document.getElementById('input-code');
             const inputName = document.getElementById('input-name');
             const btnJoin = document.getElementById('btn-join');
@@ -325,9 +371,8 @@
                     return false;
                 }, { passive: false, capture: true });
             }
-        });
 
-            // Handle Enter key press on inputs (moved inside DOMContentLoaded)
+            // Handle Enter key press on inputs
             if (inputCode) {
                 inputCode.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
@@ -346,7 +391,7 @@
                 });
             }
 
-            // Handle form submission (moved inside DOMContentLoaded)
+            // Handle form submission
             const joinForm = document.getElementById('join-form');
             if (joinForm) {
                 joinForm.addEventListener('submit', (e) => {
@@ -428,14 +473,17 @@
         // Also make it globally accessible
         window.joinSession = joinSession;
 
-        function handleMessage(msg) {
+        // Remove duplicate - handleMessage already defined above, just extend it
+        // Override handleMessage to include full implementation
+        const baseHandleMessage = handleMessage;
+        handleMessage = function(msg) {
             if (!msg) return;
             console.log("Received:", msg);
 
             if (msg.type === 'JOIN_SUCCESS' && msg.name === myName) {
                 // Login Successful
-                screenLogin.classList.add('hidden');
-                screenWait.classList.remove('hidden');
+                if (screenLogin) screenLogin.classList.add('hidden');
+                if (screenWait) screenWait.classList.remove('hidden');
             } else if (msg.type === 'ROUND_RESULT') {
                 document.body.classList.remove('leader-mode'); // Reset by default, re-add if leader
 
