@@ -24,6 +24,11 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'DarkAlchemyProject')));
 
+// Health check endpoint (helps wake up Render free tier)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: Date.now() });
+});
+
 // Root route - serve index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'DarkAlchemyProject', 'index.html'));
@@ -67,9 +72,11 @@ io.on('connection', (socket) => {
     socket.playerName = name;
 
     console.log(`Player ${name} joined session ${sessionCode}`);
+    console.log(`Sending JOIN_SUCCESS to player ${name}`);
 
     // Confirm join to player
     socket.emit('JOIN_SUCCESS', { name });
+    console.log(`JOIN_SUCCESS sent to ${socket.id}`);
 
     // Broadcast player count update to all in session
     io.to(sessionCode).emit('STATE_UPDATE', {

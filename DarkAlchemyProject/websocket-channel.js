@@ -61,12 +61,19 @@ class DualChannel {
     connectWebSocket() {
         try {
             console.log('Attempting to connect to server:', this.serverUrl);
+            
+            // Wake up Render server if it's sleeping (free tier)
+            fetch(`${this.serverUrl}/health`)
+                .then(() => console.log('Server health check passed'))
+                .catch(err => console.warn('Server health check failed (may be sleeping):', err));
+            
             this.socket = io(this.serverUrl, {
                 transports: ['websocket', 'polling'],
                 reconnection: true,
-                reconnectionDelay: 1000,
+                reconnectionDelay: 2000, // Increased delay for Render
                 reconnectionAttempts: this.maxReconnectAttempts,
-                timeout: 20000 // 20 second timeout for Render free tier
+                timeout: 20000, // 20 second timeout for Render free tier
+                forceNew: true // Force new connection
             });
 
             this.socket.on('connect', () => {
