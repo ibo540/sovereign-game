@@ -1,29 +1,11 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "server.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "DarkAlchemyProject/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/socket.io/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/DarkAlchemyProject/$1"
-    }
-  ],
+  "buildCommand": null,
+  "outputDirectory": "DarkAlchemyProject",
   "rewrites": [
     {
-      "source": "/socket.io/:path*",
-      "destination": "/server.js"
+      "source": "/(.*)",
+      "destination": "/$1"
     }
   ]
 }
