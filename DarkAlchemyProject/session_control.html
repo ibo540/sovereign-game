@@ -421,9 +421,6 @@
             /* Higher than hub (20) */
             white-space: nowrap;
             overflow: visible;
-            color: #fff !important;
-            font-size: 1rem;
-            font-weight: bold;
         }
 
         .circle-container {
@@ -655,7 +652,7 @@
 
                 if (msg.type === 'STATE_UPDATE') {
                     // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'session_control.html:566',message:'Professor received STATE_UPDATE',data:{eventType:msg.type,playerCount:msg.playerCount,sessionCode:msg.sessionCode,round:msg.round,phase:msg.phase},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D,E'})}).catch(()=>{});
+                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'session_control.html:566', message: 'Professor received STATE_UPDATE', data: { eventType: msg.type, playerCount: msg.playerCount, sessionCode: msg.sessionCode, round: msg.round, phase: msg.phase }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D,E' }) }).catch(() => { });
                     // #endregion
                     const rDisp = document.getElementById('display-round');
                     if (rDisp) rDisp.innerText = msg.round;
