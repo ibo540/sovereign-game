@@ -428,7 +428,7 @@
                 <div class="access-card">
                     <div class="qr-frame" id="qr-code-container">
                         <span class="qr-text" id="qr-placeholder">QR CODE</span>
-                        <canvas id="qr-code-canvas" style="display: none; width: 100%; height: 100%;"></canvas>
+                        <canvas id="qr-code-canvas" width="200" height="200" style="display: none; max-width: 100%; max-height: 100%;"></canvas>
                     </div>
                     <div class="session-code-display">
                         CODE: <span id="display-code">----</span>
@@ -579,8 +579,22 @@
                         const cCode = document.getElementById('display-code');
                         if (cCode && window.engine.sessionCode) {
                             cCode.innerText = window.engine.sessionCode;
-                            // Generate QR code
-                            generateQRCode(window.engine.sessionCode);
+                            // Generate QR code - wait a bit to ensure DOM is ready
+                            setTimeout(() => {
+                                if (typeof QRCode !== 'undefined') {
+                                    generateQRCode(window.engine.sessionCode);
+                                } else {
+                                    // Retry after library loads
+                                    const checkQRCode = setInterval(() => {
+                                        if (typeof QRCode !== 'undefined') {
+                                            clearInterval(checkQRCode);
+                                            generateQRCode(window.engine.sessionCode);
+                                        }
+                                    }, 100);
+                                    // Stop checking after 5 seconds
+                                    setTimeout(() => clearInterval(checkQRCode), 5000);
+                                }
+                            }, 200);
                         }
 
                         const pCount = document.getElementById('player-count');
@@ -606,11 +620,26 @@
                 const qrCanvas = document.getElementById('qr-code-canvas');
                 const qrPlaceholder = document.getElementById('qr-placeholder');
                 
-                if (!qrContainer || !qrCanvas || !sessionCode) return;
+                if (!qrContainer || !qrCanvas || !sessionCode) {
+                    console.log('QR Code elements not found or no session code:', { qrContainer: !!qrContainer, qrCanvas: !!qrCanvas, sessionCode });
+                    return;
+                }
+
+                // Check if QRCode library is loaded
+                if (typeof QRCode === 'undefined') {
+                    console.error('QRCode library not loaded');
+                    return;
+                }
 
                 // Get the current page URL and add session code as parameter
                 const currentUrl = window.location.origin + window.location.pathname.replace('session_control.html', 'player.html');
                 const qrData = `${currentUrl}?code=${sessionCode}`;
+
+                console.log('Generating QR code for:', qrData);
+
+                // Clear canvas first
+                const ctx = qrCanvas.getContext('2d');
+                ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
 
                 // Generate QR code
                 QRCode.toCanvas(qrCanvas, qrData, {
@@ -618,7 +647,8 @@
                     height: 200,
                     colorDark: '#FFD700',
                     colorLight: '#000000',
-                    correctLevel: QRCode.CorrectLevel.H
+                    correctLevel: QRCode.CorrectLevel.H,
+                    margin: 2
                 }, function (error) {
                     if (error) {
                         console.error('QR Code generation error:', error);
@@ -627,6 +657,7 @@
                     // Hide placeholder and show QR code
                     if (qrPlaceholder) qrPlaceholder.style.display = 'none';
                     qrCanvas.style.display = 'block';
+                    console.log('QR Code generated successfully');
                 });
             }
 
@@ -872,6 +903,29 @@
                     document.getElementById('screen-setup').classList.add('hidden');
                     document.getElementById('screen-lobby').classList.remove('hidden');
                     window.engine.startLobby();
+                    
+                    // Generate QR code after lobby is shown
+                    setTimeout(() => {
+                        if (window.engine && window.engine.sessionCode) {
+                            const cCode = document.getElementById('display-code');
+                            if (cCode) {
+                                cCode.innerText = window.engine.sessionCode;
+                            }
+                            // Wait for QRCode library to load
+                            if (typeof QRCode !== 'undefined') {
+                                generateQRCode(window.engine.sessionCode);
+                            } else {
+                                // Retry after library loads
+                                const checkQRCode = setInterval(() => {
+                                    if (typeof QRCode !== 'undefined') {
+                                        clearInterval(checkQRCode);
+                                        generateQRCode(window.engine.sessionCode);
+                                    }
+                                }, 100);
+                                setTimeout(() => clearInterval(checkQRCode), 5000);
+                            }
+                        }
+                    }, 300);
                 };
             }
 
@@ -879,13 +933,22 @@
             if (btnStart) btnStart.onclick = window.runAnimation;
 
             // Initialize session code display and QR code when session starts
-            if (window.engine && window.engine.sessionCode) {
-                const cCode = document.getElementById('display-code');
-                if (cCode) {
-                    cCode.innerText = window.engine.sessionCode;
-                    generateQRCode(window.engine.sessionCode);
+            // Wait a bit for DOM to be ready and QRCode library to load
+            setTimeout(() => {
+                if (window.engine && window.engine.sessionCode) {
+                    const cCode = document.getElementById('display-code');
+                    if (cCode) {
+                        cCode.innerText = window.engine.sessionCode;
+                        // Wait for QRCode library to be available
+                        if (typeof QRCode !== 'undefined') {
+                            generateQRCode(window.engine.sessionCode);
+                        } else {
+                            // Retry after a short delay
+                            setTimeout(() => generateQRCode(window.engine.sessionCode), 500);
+                        }
+                    }
                 }
-            }
+            }, 100);
 
             // Force first render
             // First render
