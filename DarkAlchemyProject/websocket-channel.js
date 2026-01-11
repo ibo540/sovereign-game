@@ -164,6 +164,11 @@ class DualChannel {
     }
 
     send(data) {
+        // #region agent log
+        if (data.type === 'ROLE_ASSIGNMENT' || data.type === 'STATE_UPDATE') {
+            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'websocket-channel.js:166',message:'DualChannel send called',data:{msgType:data.type,target:data.target,role:data.role,connected:this.connected,hasSocket:!!this.socket,willUseWebSocket:this.connected&&this.socket},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2,H3'})}).catch(()=>{});
+        }
+        // #endregion
         // If WebSocket is connected, use it
         if (this.connected && this.socket) {
             // Check if this is a join request or session creation

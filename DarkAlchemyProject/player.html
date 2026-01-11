@@ -266,6 +266,9 @@
                 }
                 // ... other message handlers will be added below
             } else if (msg.type === 'ROLE_ASSIGNMENT' && msg.target === myName) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'player.html:268',message:'Player received ROLE_ASSIGNMENT',data:{target:msg.target,role:msg.role,myName:myName,screenWaitHidden:screenWait?.classList?.contains('hidden'),screenDashHidden:screenDash?.classList?.contains('hidden')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2,H5'})}).catch(()=>{});
+                // #endregion
                 myRole = msg.role;
                 // Handle role assignment (implementation continues below)
             } else if (msg.type === 'ERROR') {
@@ -650,6 +653,9 @@
                     chatBox.scrollTop = chatBox.scrollHeight;
                 }
             } else if (msg.type === 'STATE_UPDATE') {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'player.html:652',message:'Player received STATE_UPDATE',data:{phase:msg.phase,hasRoles:!!msg.roles,leader:msg.roles?.leader?.name,eliteCount:msg.roles?.elites?.length,citizenCount:msg.roles?.citizens?.length,myName:myName,myRole:myRole,screenWaitHidden:screenWait?.classList?.contains('hidden')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3,H4,H5'})}).catch(()=>{});
+                // #endregion
                 // Game Update
                 screenWait.classList.add('hidden');
                 screenDash.classList.remove('hidden');

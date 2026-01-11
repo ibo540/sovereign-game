@@ -1008,6 +1008,9 @@
             // --- START GAME TRANSITION ---
             window.startGame = async function () {
                 console.log("Starting Game Transition...");
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'session_control.html:1009',message:'startGame called',data:{engineExists:!!window.engine,engineState:window.engine?.state,playerCount:window.engine?.players?.length,beginSimulationExists:typeof window.engine?.beginSimulation==='function'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+                // #endregion
 
                 const lobbyScreen = document.getElementById('screen-lobby');
                 const dashboardScreen = document.getElementById('game-dashboard');
@@ -1052,6 +1055,19 @@
                 }
 
                 console.log("Dashboard Active");
+                
+                // CRITICAL: Start the actual game simulation
+                if (window.engine && typeof window.engine.beginSimulation === 'function') {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'session_control.html:1054',message:'Calling beginSimulation',data:{playerCount:window.engine.players.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+                    // #endregion
+                    window.engine.beginSimulation();
+                } else {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'session_control.html:1058',message:'beginSimulation NOT called - missing',data:{engineExists:!!window.engine,beginSimulationExists:typeof window.engine?.beginSimulation==='function'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+                    // #endregion
+                    console.error('ERROR: beginSimulation not available!');
+                }
             };
 
             // Bindings
