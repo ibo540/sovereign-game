@@ -14,18 +14,40 @@
     <style>
         /* Scrolling Fix */
         html,
-        body {
-            height: auto !important;
-            min-height: 100vh;
-            overflow-y: auto !important;
-        }
+        <body>< !-- EMERGENCY DEBUG OVERLAY --><div id="debug-overlay" style="position:fixed; top:0; left:0; width:100%; height:100px; background:rgba(0,0,0,0.8); color:#0f0; z-index:9999; font-family:monospace; padding:10px; pointer-events:none; overflow:hidden;">WAITING FOR DATA... </div><script>setInterval(()=> {
+                const dbg=document.getElementById('debug-overlay');
 
-        .main-container {
-            height: auto !important;
-            min-height: 100vh;
-            overflow: visible !important;
-            padding-bottom: 100px;
-            /* Space for scrolling */
+                if (window.engine) {
+                    dbg.innerHTML=` CODE: $ {
+                        window.engine.sessionCode
+                    }
+
+                    | STATE: $ {
+                        window.engine.state
+                    }
+
+                    <br> PLAYERS (Engine): $ {
+                        JSON.stringify(window.engine.players)
+                    }
+
+                    <br> CACHE (Local): $ {
+                        JSON.stringify(window.engine.localKnownPlayers)
+                    }
+
+                    <br> LAST SERVER MSG: $ {
+                        window.engine.lastServerMessage ? JSON.stringify(window.engine.lastServerMessage) : 'None'
+                    }
+
+                    `;
+                }
+            }
+
+            , 500);
+        </script><div class="main-container">height: auto !important;
+        min-height: 100vh;
+        overflow: visible !important;
+        padding-bottom: 100px;
+        /* Space for scrolling */
         }
 
         .session-content {
@@ -675,9 +697,9 @@
                             window.engine.players = msg.players.map(name => ({ name: name, role: null }));
                             playersUpdated = true;
                             // #region agent log
-                            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'session_control.html:697',message:'Professor UI synced player names from server',data:{updatedPlayerCount:window.engine.players.length,playerNames:window.engine.players.map(p=>p.name)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'session_control.html:697', message: 'Professor UI synced player names from server', data: { updatedPlayerCount: window.engine.players.length, playerNames: window.engine.players.map(p => p.name) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E' }) }).catch(() => { });
                             // #endregion
-                            
+
                             // Immediately update UI when players are synced
                             const pCount = document.getElementById('player-count');
                             if (pCount) pCount.innerText = window.engine.players.length;
@@ -1009,7 +1031,7 @@
             window.startGame = async function () {
                 console.log("Starting Game Transition...");
                 // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'session_control.html:1009',message:'startGame called',data:{engineExists:!!window.engine,engineState:window.engine?.state,playerCount:window.engine?.players?.length,beginSimulationExists:typeof window.engine?.beginSimulation==='function'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'session_control.html:1009', message: 'startGame called', data: { engineExists: !!window.engine, engineState: window.engine?.state, playerCount: window.engine?.players?.length, beginSimulationExists: typeof window.engine?.beginSimulation === 'function' }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
                 // #endregion
 
                 const lobbyScreen = document.getElementById('screen-lobby');
@@ -1055,16 +1077,16 @@
                 }
 
                 console.log("Dashboard Active");
-                
+
                 // CRITICAL: Start the actual game simulation
                 if (window.engine && typeof window.engine.beginSimulation === 'function') {
                     // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'session_control.html:1054',message:'Calling beginSimulation',data:{playerCount:window.engine.players.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'session_control.html:1054', message: 'Calling beginSimulation', data: { playerCount: window.engine.players.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
                     // #endregion
                     window.engine.beginSimulation();
                 } else {
                     // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'session_control.html:1058',message:'beginSimulation NOT called - missing',data:{engineExists:!!window.engine,beginSimulationExists:typeof window.engine?.beginSimulation==='function'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'session_control.html:1058', message: 'beginSimulation NOT called - missing', data: { engineExists: !!window.engine, beginSimulationExists: typeof window.engine?.beginSimulation === 'function' }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
                     // #endregion
                     console.error('ERROR: beginSimulation not available!');
                 }
