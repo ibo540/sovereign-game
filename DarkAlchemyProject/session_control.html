@@ -500,49 +500,52 @@
                 <div class="lobby-container">
                     <div class="lobby-status"
                         style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-                        <h2 class="status-title" style="font-family: 'Cinzel', serif;">Student Roster</h2>
+                        <h2 class="status-title" style="font-family: 'Cinzel', serif;">Circle of Luck</h2>
 
-                        <!-- NEW: Clean List View -->
-                        <div id="player-list-container" style="
-                                    width: 100%; 
-                                    max-width: 600px; 
-                                    height: 50vh; 
-                                    overflow-y: auto; 
-                                    background: rgba(0,0,0,0.5); 
-                                    border: 1px solid rgba(255, 215, 0, 0.3);
-                                    border-radius: 8px;
-                                    padding: 20px;
-                                    margin-bottom: 20px;
-                                ">
-                            <ul id="player-list" style="
-                                        list-style: none; 
-                                        padding: 0; 
-                                        margin: 0; 
-                                        display: grid; 
-                                        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
-                                        gap: 15px;
-                                    ">
-                                <!-- JS Injects items here -->
-                            </ul>
+                        <!-- Structure Refactor: Wrapper for positioning -->
+                        <!-- Enlarged Size: 55vh -->
+                        <div style="position: relative; width: 55vh; height: 55vh;">
+
+                            <!-- Spinning Circle (Pie Chart) -->
+                            <div id="circle-display" class="circle-container"
+                                style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 10;">
+                                <!-- Slices injected here -->
+                            </div>
+
+                            <!-- Static Center (Black Circle) -->
+                            <!-- Dynamic Size: 22vh (Radius 11vh) -->
+                            <div class="center-status"
+                                style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; width: 22vh; height: 22vh;">
+                                <span class="center-count" id="player-count">0</span>
+                                <span class="center-label">JOINED</span>
+                            </div>
+
                         </div>
 
-                        <div class="center-status" style="
-                            margin-top: 20px;
-                            width: 100%;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            background: rgba(0,0,0,0.3);
-                            padding: 15px;
-                            border-radius: 8px;
-                            border: 1px solid #333;
-                        ">
-                            <span class="center-count" id="player-count"
-                                style="font-size: 2.5rem; color: #FFD700; font-family: 'Cinzel'; line-height: 1;">0</span>
-                            <span class="center-label"
-                                style="font-family: 'Roboto Mono'; color: #888; letter-spacing: 2px; font-size: 0.9rem; margin-top: 5px;">STUDENTS
-                                JOINED</span>
+                        <!-- Controls -->
+                        <div class="control-panel"
+                            style="margin-top: 30px; text-align: center; display: flex; justify-content: center;">
+
+                            <!-- Custom Start Selection Plate -->
+                            <div id="btn-start-game" class="start-selection-plate" onclick="window.runAnimation()"
+                                style="cursor: pointer;">
+                                <div class="plate-content">
+                                    <span class="plate-title">START</span>
+                                    <div class="plate-line"></div>
+                                    <span class="plate-subtitle">SELECTION</span>
+                                </div>
+                                <!-- Decorative Screws -->
+                                <div class="plate-screw top-left"></div>
+                                <div class="plate-screw top-right"></div>
+                                <div class="plate-screw bottom-left"></div>
+                                <div class="plate-screw bottom-right"></div>
+                            </div>
+                        </div>
+
+                        <!-- Results List (Populated by JS) -->
+                        <div id="results-list" class="results-container"
+                            style="margin-top:20px; width: 80%; max-width: 600px;">
+                            <!-- JS Injects items here -->
                         </div>
                     </div>
                 </div>
