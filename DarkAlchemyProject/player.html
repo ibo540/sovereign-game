@@ -96,24 +96,17 @@
             <h1 class="session-title">HETAIROI</h1>
 
             <!-- STAGE 1: LOGIN -->
-            <div id="player-login" class="screen-section"
-                style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh;">
-                <h2 class="prompt-text"
-                    style="font-family: 'Cinzel', serif; font-size: 2.5vw; color: #ffd700; margin-bottom: 4vh; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); letter-spacing: 3px;">
-                    Join Session</h2>
+            <div id="player-login" class="screen-section" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh;">
+                <h2 class="prompt-text" style="font-family: 'Cinzel', serif; font-size: 2.5vw; color: #ffd700; margin-bottom: 4vh; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); letter-spacing: 3px;">Join Session</h2>
                 <form class="player-form" id="join-form">
                     <input type="text" id="input-code" class="input-field" placeholder="SESSION CODE" maxlength="4"
                         style="text-transform:uppercase;" required autocomplete="off">
-                    <input type="text" id="input-name" class="input-field" placeholder="YOUR NAME" maxlength="12"
-                        required autocomplete="off">
-                    <button type="submit" id="btn-join" class="alchemy-btn"
-                        style="width: 100%; max-width: 100%; margin-top: 2vh; height: 60px; -webkit-tap-highlight-color: transparent;">
+                    <input type="text" id="input-name" class="input-field" placeholder="YOUR NAME" maxlength="12" required autocomplete="off">
+                    <button type="submit" id="btn-join" class="alchemy-btn" style="width: 100%; max-width: 100%; margin-top: 2vh; height: 60px; -webkit-tap-highlight-color: transparent;">
                         <img src="assets/button_pro.svg" class="btn-bg" alt="">
                         <span class="btn-text">ENTER</span>
                     </button>
-                    <p id="error-msg"
-                        style="color:#ff3333; display:none; margin-top: 1.5vh; font-family: 'Roboto Mono', monospace; text-align: center; font-size: 0.9rem; letter-spacing: 1px;">
-                        Invalid Code</p>
+                    <p id="error-msg" style="color:#ff3333; display:none; margin-top: 1.5vh; font-family: 'Roboto Mono', monospace; text-align: center; font-size: 0.9rem; letter-spacing: 1px;">Invalid Code</p>
                 </form>
             </div>
 
@@ -274,7 +267,7 @@
                 // ... other message handlers will be added below
             } else if (msg.type === 'ROLE_ASSIGNMENT' && msg.target === myName) {
                 // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'player.html:268', message: 'Player received ROLE_ASSIGNMENT', data: { target: msg.target, role: msg.role, myName: myName, screenWaitHidden: screenWait?.classList?.contains('hidden'), screenDashHidden: screenDash?.classList?.contains('hidden') }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H2,H5' }) }).catch(() => { });
+                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'player.html:268',message:'Player received ROLE_ASSIGNMENT',data:{target:msg.target,role:msg.role,myName:myName,screenWaitHidden:screenWait?.classList?.contains('hidden'),screenDashHidden:screenDash?.classList?.contains('hidden')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2,H5'})}).catch(()=>{});
                 // #endregion
                 myRole = msg.role;
                 // Handle role assignment (implementation continues below)
@@ -305,7 +298,7 @@
                 bc = new BroadcastChannel('dark_alchemy_session');
                 bc.onmessage = (ev) => handleMessage(ev.data);
             }
-
+            
             channel = {
                 send: (data) => {
                     if (bc) bc.postMessage(data);
@@ -321,17 +314,17 @@
         // Define joinSession BEFORE DOMContentLoaded so it's available immediately
         function joinSession() {
             console.log('=== joinSession called ==='); // Debug log
-
+            
             const codeInput = document.getElementById('input-code');
             const nameInput = document.getElementById('input-name');
             const btnJoin = document.getElementById('btn-join');
-
+            
             if (!codeInput || !nameInput) {
                 console.error('Input fields not found');
                 alert('Input fields not found. Please refresh the page.');
                 return;
             }
-
+            
             const code = codeInput.value.toUpperCase().trim();
             const name = nameInput.value.trim();
 
@@ -350,12 +343,12 @@
 
             myCode = code;
             myName = name;
-
+            
             console.log('Sending join request to channel...'); // Debug log
             console.log('Channel object:', channel); // Debug log
-
+            
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'player.html:342', message: 'Student join request - BEFORE send', data: { sessionCode: code, playerName: name, serverUrl: window.GAME_SERVER_URL, channelConnected: channel?.connected, channelHasJoinSession: typeof channel?.joinSession === 'function', deviceOrigin: window.location.origin, deviceHostname: window.location.hostname }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'A,B,C' }) }).catch(() => { });
+            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'player.html:342',message:'Student join request - BEFORE send',data:{sessionCode:code,playerName:name,serverUrl:window.GAME_SERVER_URL,channelConnected:channel?.connected,channelHasJoinSession:typeof channel?.joinSession==='function',deviceOrigin:window.location.origin,deviceHostname:window.location.hostname},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
             // #endregion
 
             // Show loading state
@@ -374,7 +367,7 @@
                 if (errorMsg) {
                     // Check if server is configured and connected
                     const hasServer = window.GAME_SERVER_URL || (channel && channel.connected);
-
+                    
                     if (hasServer) {
                         // Server is configured - connection issue
                         errorMsg.innerText = 'Connection timeout. Please check: 1) The host has created a session, 2) You\'re using the correct session code, 3) Server is running. If using Render free tier, wait a moment and try again (first request may be slow).';
@@ -397,21 +390,21 @@
                 if (!channel) {
                     throw new Error('Channel not initialized. Please refresh the page.');
                 }
-
+                
                 // Use joinSession method if available (WebSocket), otherwise use send
                 if (typeof channel.joinSession === 'function') {
                     channel.joinSession(code, name);
                     console.log('Join request sent via WebSocket');
                     // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'player.html:389', message: 'Student join request - SENT via WebSocket', data: { sessionCode: code, playerName: name, method: 'joinSession' }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'C' }) }).catch(() => { });
+                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'player.html:389',message:'Student join request - SENT via WebSocket',data:{sessionCode:code,playerName:name,method:'joinSession'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
                     // #endregion
                 } else if (typeof channel.send === 'function') {
                     channel.send({ type: 'JOIN_REQUEST', code: code, name: name });
                     console.log('Join request sent via local channel');
                     // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'player.html:392', message: 'Student join request - SENT via local channel', data: { sessionCode: code, playerName: name, method: 'send' }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'A' }) }).catch(() => { });
+                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'player.html:392',message:'Student join request - SENT via local channel',data:{sessionCode:code,playerName:name,method:'send'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
                     // #endregion
-
+                    
                     // Note: Cross-device detection removed - let the timeout handle it with better messaging
                 } else {
                     throw new Error('Channel has no send or joinSession method');
@@ -437,12 +430,12 @@
                 }
             }
         }
-
+        
         // Make it globally accessible
         window.joinSession = joinSession;
 
         // Wait for DOM to be fully loaded
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             // UI References (assign to global variables declared above)
             screenLogin = document.getElementById('player-login');
             screenWait = document.getElementById('player-waiting');
@@ -465,7 +458,7 @@
 
             // Simple, reliable button handler
             if (btnJoin) {
-                btnJoin.onclick = function (e) {
+                btnJoin.onclick = function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('Button clicked - calling joinSession');
@@ -509,7 +502,7 @@
         // Remove duplicate - handleMessage already defined above, just extend it
         // Override handleMessage to include full implementation
         const baseHandleMessage = handleMessage;
-        handleMessage = function (msg) {
+        handleMessage = function(msg) {
             if (!msg) return;
             console.log("Received:", msg);
 
@@ -661,18 +654,11 @@
                 }
             } else if (msg.type === 'STATE_UPDATE') {
                 // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'player.html:652', message: 'Player received STATE_UPDATE', data: { phase: msg.phase, hasRoles: !!msg.roles, leader: msg.roles?.leader?.name, eliteCount: msg.roles?.elites?.length, citizenCount: msg.roles?.citizens?.length, myName: myName, myRole: myRole, screenWaitHidden: screenWait?.classList?.contains('hidden') }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H3,H4,H5' }) }).catch(() => { });
+                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'player.html:652',message:'Player received STATE_UPDATE',data:{phase:msg.phase,hasRoles:!!msg.roles,leader:msg.roles?.leader?.name,eliteCount:msg.roles?.elites?.length,citizenCount:msg.roles?.citizens?.length,myName:myName,myRole:myRole,screenWaitHidden:screenWait?.classList?.contains('hidden')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3,H4,H5'})}).catch(()=>{});
                 // #endregion
                 // Game Update
-                // CRITICAL FIX: Only switch to dashboard if game has actually started (not in LOBBY)
-                if (msg.phase !== 'LOBBY' && msg.phase !== 'SETUP') {
-                    screenWait.classList.add('hidden');
-                    screenDash.classList.remove('hidden');
-                } else {
-                    // Ensure we stay on waiting screen during Lobby
-                    screenWait.classList.remove('hidden');
-                    screenDash.classList.add('hidden');
-                }
+                screenWait.classList.add('hidden');
+                screenDash.classList.remove('hidden');
 
                 // Find My Role
                 let myRoleText = "Unknown";

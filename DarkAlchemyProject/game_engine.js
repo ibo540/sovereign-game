@@ -93,7 +93,7 @@ class GameSession {
 
         if (msg.type === 'JOIN_REQUEST') {
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:87', message: 'Game engine received JOIN_REQUEST', data: { msgCode: msg.code, msgName: msg.name, engineSessionCode: this.sessionCode, engineState: this.state, currentPlayersCount: this.players.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
+            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:87',message:'Game engine received JOIN_REQUEST',data:{msgCode:msg.code,msgName:msg.name,engineSessionCode:this.sessionCode,engineState:this.state,currentPlayersCount:this.players.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
             // #endregion
             if (this.state === 'LOBBY' && msg.code === this.sessionCode) {
                 // Prevent duplicate joins
@@ -102,7 +102,7 @@ class GameSession {
                 // Accept Player
                 this.players.push({ name: msg.name, role: null });
                 // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:95', message: 'Game engine added player', data: { playerName: msg.name, newPlayersCount: this.players.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E' }) }).catch(() => { });
+                fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:95',message:'Game engine added player',data:{playerName:msg.name,newPlayersCount:this.players.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
                 // #endregion
 
                 // Confirm Join to Player
@@ -142,7 +142,7 @@ class GameSession {
             this.channel.send({ type: 'PROTEST_LEVEL', level: this.protestLevel });
         } else if (msg.type === 'STATE_UPDATE') {
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:143', message: 'Game engine received STATE_UPDATE from server', data: { msgPlayerCount: msg.playerCount, msgPlayers: msg.players, msgSessionCode: msg.sessionCode, engineSessionCode: this.sessionCode, enginePlayersLength: this.players.length, shouldUpdate: msg.sessionCode === this.sessionCode }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D,E' }) }).catch(() => { });
+            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:143',message:'Game engine received STATE_UPDATE from server',data:{msgPlayerCount:msg.playerCount,msgPlayers:msg.players,msgSessionCode:msg.sessionCode,engineSessionCode:this.sessionCode,enginePlayersLength:this.players.length,shouldUpdate:msg.sessionCode===this.sessionCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D,E'})}).catch(()=>{});
             // #endregion
             // Update player list from server if session codes match
             if (msg.sessionCode === this.sessionCode && msg.playerCount !== undefined) {
@@ -151,22 +151,20 @@ class GameSession {
                     // Server sent actual player names - use them
                     this.players = msg.players.map(name => ({ name: name, role: null }));
                     // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:150', message: 'Game engine synced player names from server', data: { playerNames: msg.players, playerCount: this.players.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E' }) }).catch(() => { });
+                    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:150',message:'Game engine synced player names from server',data:{playerNames:msg.players,playerCount:this.players.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
                     // #endregion
                 } else {
-                    // Fallback: only player count available.
-                    // CRITICAL FIX: Do NOT overwrite existing names with "Player X" placeholders.
-                    // If we have local names, keep them!
-
-                    if (this.players.length === 0 && msg.playerCount > 0) {
-                        // Only if we have NO players locally, we might add placeholders to avoid empty circle.
-                        // But we should be careful. For now, let's just log and NOT add generic names
-                        // because that overwrites the user's "ibo" entry if it exists.
-                        console.warn('⚠️ Server sent player count but no names. Keeping local state to preserve inputs.');
+                    // Fallback: only player count available, sync count only
+                    const serverPlayerCount = msg.playerCount;
+                    while (this.players.length < serverPlayerCount) {
+                        this.players.push({ name: `Player ${this.players.length + 1}`, role: null });
+                    }
+                    while (this.players.length > serverPlayerCount) {
+                        this.players.pop();
                     }
                 }
                 this.updateUI();
-
+                
                 // CRITICAL: Also trigger UI update in session_control.html if handleUiUpdate exists
                 // This ensures the pie chart is rendered when server sends STATE_UPDATE
                 if (typeof window !== 'undefined' && typeof window.handleUiUpdate === 'function') {
@@ -193,7 +191,7 @@ class GameSession {
             roles: this.roles // Send role specific data if needed, or filter
         };
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:182', message: 'broadcastState sending STATE_UPDATE', data: { phase: stateMsg.phase, hasRoles: !!stateMsg.roles, leader: stateMsg.roles?.leader?.name, eliteCount: stateMsg.roles?.elites?.length, citizenCount: stateMsg.roles?.citizens?.length, channelConnected: this.channel?.connected }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H3' }) }).catch(() => { });
+        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:182',message:'broadcastState sending STATE_UPDATE',data:{phase:stateMsg.phase,hasRoles:!!stateMsg.roles,leader:stateMsg.roles?.leader?.name,eliteCount:stateMsg.roles?.elites?.length,citizenCount:stateMsg.roles?.citizens?.length,channelConnected:this.channel?.connected},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
         // #endregion
         this.channel.send(stateMsg);
         this.updateUI();
@@ -202,7 +200,7 @@ class GameSession {
     // --- Core Game Loop ---
     beginSimulation() {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:198', message: 'beginSimulation called', data: { playerCount: this.players.length, currentState: this.state }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
+        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:198',message:'beginSimulation called',data:{playerCount:this.players.length,currentState:this.state},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
         // #endregion
         if (this.players.length < 3) {
             // alert("Need at least 3 players to start!");
@@ -217,7 +215,7 @@ class GameSession {
 
     assignRoles() {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:210', message: 'assignRoles called', data: { playerCount: this.players.length, playerNames: this.players.map(p => p.name) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
+        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:210',message:'assignRoles called',data:{playerCount:this.players.length,playerNames:this.players.map(p=>p.name)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
         // #endregion
         // Shuffle players
         const shuffled = [...this.players].sort(() => 0.5 - Math.random());
@@ -286,18 +284,18 @@ class GameSession {
                 details: roleData
             };
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:271', message: 'Sending ROLE_ASSIGNMENT', data: { target: roleMsg.target, role: roleMsg.role, channelConnected: this.channel?.connected, channelHasSocket: !!this.channel?.socket }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H2' }) }).catch(() => { });
+            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:271',message:'Sending ROLE_ASSIGNMENT',data:{target:roleMsg.target,role:roleMsg.role,channelConnected:this.channel?.connected,channelHasSocket:!!this.channel?.socket},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
             // #endregion
             this.channel.send(roleMsg);
         });
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:278', message: 'assignRoles completed', data: { leader: this.roles.leader?.name, eliteCount: this.roles.elites.length, citizenCount: this.roles.citizens.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
+        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:278',message:'assignRoles completed',data:{leader:this.roles.leader?.name,eliteCount:this.roles.elites.length,citizenCount:this.roles.citizens.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
         // #endregion
     }
 
     startPhase(phase) {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:296', message: 'startPhase called', data: { newPhase: phase, oldPhase: this.phase, state: this.state }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
+        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:296',message:'startPhase called',data:{newPhase:phase,oldPhase:this.phase,state:this.state},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
         // #endregion
         clearInterval(this.timerInterval);
 
@@ -468,15 +466,15 @@ class GameSession {
 
     startLobby() {
         this.state = 'LOBBY';
-
+        
         // Create session on server if using WebSocket
         if (this.channel && typeof this.channel.createSession === 'function') {
             // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:407', message: 'Host creating session on server', data: { sessionCode: this.sessionCode, channelConnected: this.channel.connected, hasCreateSession: typeof this.channel.createSession === 'function' }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'G' }) }).catch(() => { });
+            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'game_engine.js:407',message:'Host creating session on server',data:{sessionCode:this.sessionCode,channelConnected:this.channel.connected,hasCreateSession:typeof this.channel.createSession==='function'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
             // #endregion
             this.channel.createSession(this.sessionCode);
         }
-
+        
         this.updateUI();
     }
 
