@@ -170,361 +170,349 @@ class GameSession {
                         // BUT, if the user sees "Player 1", it might be coming from initialized data?
                         // Actually, let's look at where "Player 1" comes from.
                         // If it's NOT in the players array, maybe the UI is generating it?
-
-                        // FIX: If we strictly have NO players, but server says there are some,
-                        // we MUST generate placeholders or we get an empty circle.
-                        // Ideally checking if we just sent a join.
-
-                        console.log('⚠️ Re-generating placeholders for missing names to prevent empty circle');
-                        const missingCount = msg.playerCount - this.players.length;
-                        for (let i = 0; i < missingCount; i++) {
-                            // Use "Guest" instead of "Player" to distinguish
-                            this.players.push({ name: `Guest ${this.players.length + 1}`, role: null });
-                        }
                     }
+
+                    // CRITICAL: If server has count > local, do NOT auto-fill placeholders
+                    // logic removed entirely.
                 }
+                this.updateUI();
 
-                // CRITICAL: If server has count > local, do NOT auto-fill placeholders
-                // logic removed entirely.
-            }
-            this.updateUI();
-
-            // CRITICAL: Also trigger UI update in session_control.html
-            if (typeof window !== 'undefined' && typeof window.handleUiUpdate === 'function') {
-                window.handleUiUpdate({
-                    ...msg,
-                    players: this.players.map(p => p.name)
-                });
+                // CRITICAL: Also trigger UI update in session_control.html
+                if (typeof window !== 'undefined' && typeof window.handleUiUpdate === 'function') {
+                    window.handleUiUpdate({
+                        ...msg,
+                        players: this.players.map(p => p.name)
+                    });
+                }
             }
         }
     }
-}
 
-// --- State Broadcasting ---
-broadcastState() {
-    const stateMsg = {
-        type: 'STATE_UPDATE',
-        sessionCode: this.sessionCode,
-        phase: this.phase,
-        timeRemaining: this.timeRemaining,
-        playerCount: this.players.length,
-        round: this.roundNumber,
-        allocation: this.lastAllocation,
-        roles: this.roles // Send role specific data if needed, or filter
-    };
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:182', message: 'broadcastState sending STATE_UPDATE', data: { phase: stateMsg.phase, hasRoles: !!stateMsg.roles, leader: stateMsg.roles?.leader?.name, eliteCount: stateMsg.roles?.elites?.length, citizenCount: stateMsg.roles?.citizens?.length, channelConnected: this.channel?.connected }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H3' }) }).catch(() => { });
-    // #endregion
-    this.channel.send(stateMsg);
-    this.updateUI();
-}
-
-// --- Core Game Loop ---
-beginSimulation() {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:198', message: 'beginSimulation called', data: { playerCount: this.players.length, currentState: this.state }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
-    // #endregion
-    if (this.players.length < 3) {
-        // alert("Need at least 3 players to start!");
-        // For testing, allowing 1 player override
-    }
-
-    this.state = 'ACTIVE';
-    this.roundNumber = 1;
-    this.assignRoles();
-    this.startPhase('ALLOCATION');
-}
-
-assignRoles() {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:210', message: 'assignRoles called', data: { playerCount: this.players.length, playerNames: this.players.map(p => p.name) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
-    // #endregion
-    // Shuffle players
-    const shuffled = [...this.players].sort(() => 0.5 - Math.random());
-
-    // 1. Leader
-    this.roles.leader = shuffled[0];
-    this.roles.leader.role = 'Leader';
-
-    // 2. Elites (5 Fixed)
-    const eliteTypes = [
-        { id: 'General', name: 'Military', weight: 3 },
-        { id: 'SpyChief', name: 'Intelligence', weight: 2 },
-        { id: 'PoliceChief', name: 'Interior', weight: 2 },
-        { id: 'Oligarch', name: 'Economy', weight: 1 },
-        { id: 'Propagandist', name: 'Media', weight: 1 }
-    ];
-
-    this.roles.elites = [];
-    let pIndex = 1;
-
-    // Assign Real Players to Elites first
-    for (let i = 0; i < eliteTypes.length; i++) {
-        if (pIndex < shuffled.length) {
-            const p = shuffled[pIndex++];
-            p.role = eliteTypes[i].name; // Just string name
-            this.roles.elites.push({
-                name: p.name,
-                role: eliteTypes[i].name,
-                weight: eliteTypes[i].weight,
-                type: eliteTypes[i].id
-            });
-        } else {
-            // Fill with Bots if not enough players? 
-            // For Minimum Viable, we assume players fill or we handle empty
-        }
-    }
-
-    // 3. Citizens (Rest)
-    this.roles.citizens = [];
-    while (pIndex < shuffled.length) {
-        const p = shuffled[pIndex++];
-        p.role = 'Citizen';
-        // Assign random class
-        const classes = ['Upper Class', 'Middle Class', 'Lower Class'];
-        p.class = classes[Math.floor(Math.random() * classes.length)];
-        this.roles.citizens.push(p);
-    }
-
-    // Notify Players of Roles
-    this.players.forEach(p => {
-        // Find detailed role info
-        let roleData = { role: p.role };
-        if (p.role === 'Citizen') {
-            const c = this.roles.citizens.find(c => c.name === p.name);
-            if (c) roleData.className = c.class;
-        }
-        if (this.roles.elites.find(e => e.name === p.name)) {
-            const e = this.roles.elites.find(e => e.name === p.name);
-            roleData.weight = e.weight;
-        }
-
-        const roleMsg = {
-            type: 'ROLE_ASSIGNMENT',
-            target: p.name,
-            role: p.role,
-            details: roleData
+    // --- State Broadcasting ---
+    broadcastState() {
+        const stateMsg = {
+            type: 'STATE_UPDATE',
+            sessionCode: this.sessionCode,
+            phase: this.phase,
+            timeRemaining: this.timeRemaining,
+            playerCount: this.players.length,
+            round: this.roundNumber,
+            allocation: this.lastAllocation,
+            roles: this.roles // Send role specific data if needed, or filter
         };
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:271', message: 'Sending ROLE_ASSIGNMENT', data: { target: roleMsg.target, role: roleMsg.role, channelConnected: this.channel?.connected, channelHasSocket: !!this.channel?.socket }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H2' }) }).catch(() => { });
+        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:182', message: 'broadcastState sending STATE_UPDATE', data: { phase: stateMsg.phase, hasRoles: !!stateMsg.roles, leader: stateMsg.roles?.leader?.name, eliteCount: stateMsg.roles?.elites?.length, citizenCount: stateMsg.roles?.citizens?.length, channelConnected: this.channel?.connected }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H3' }) }).catch(() => { });
         // #endregion
-        this.channel.send(roleMsg);
-    });
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:278', message: 'assignRoles completed', data: { leader: this.roles.leader?.name, eliteCount: this.roles.elites.length, citizenCount: this.roles.citizens.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
-    // #endregion
-}
-
-startPhase(phase) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:296', message: 'startPhase called', data: { newPhase: phase, oldPhase: this.phase, state: this.state }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
-    // #endregion
-    clearInterval(this.timerInterval);
-
-    // Resolution Logic Check
-    if (phase === 'RESOLUTION' && this.phase === 'VOTING') {
-        this.resolveRound();
+        this.channel.send(stateMsg);
+        this.updateUI();
     }
 
-    this.phase = phase;
-    let duration = 0;
-
-    switch (phase) {
-        case 'ALLOCATION':
-            duration = 90;
-            this.votes = [];
-            this.protestLevel = 0;
-            break;
-        case 'VOTING':
-            duration = 60;
-            break;
-        case 'RESOLUTION':
-            duration = 20;
-            break;
-        default:
-            duration = 10;
-    }
-
-    this.timeRemaining = duration;
-    this.updateTimerUI(duration);
-    this.broadcastState();
-    this.startTimer();
-}
-
-resolveRound() {
-    let outcomeMessage = `Round ${this.roundNumber} Result: `;
-
-    // Calculate Coup Power
-    let betrayWeight = 0;
-    let loyalWeight = 0;
-    let candidate = null;
-
-    // Sum Votes
-    this.votes.forEach(v => {
-        const elite = this.roles.elites.find(e => e.name === v.voter);
-        let weight = elite ? elite.weight : 0;
-
-        // External Offer Bonus
-        if (v.coupType === 'EXTERNAL') {
-            weight += 1.5; // Massive Bonus for Foreign Intervention
-        }
-
-        if (v.vote === 'BETRAY') {
-            betrayWeight += weight;
-            if (v.candidate) candidate = v.candidate;
-        } else {
-            loyalWeight += weight;
-        }
-    });
-
-    // Determine Outcome
-    // If External involved, threshold is lower? Or just weight added.
-    const totalWeight = betrayWeight + loyalWeight;
-    const rebelPercent = totalWeight > 0 ? Math.round((betrayWeight / totalWeight) * 100) : 0;
-    const loyalPercent = 100 - rebelPercent;
-
-    const coupSuccess = betrayWeight > loyalWeight;
-
-    let purgedList = [];
-    let pardonedList = [];
-
-    if (coupSuccess) {
-        outcomeMessage += "COUP SUCCEEDED! The Leader has been overthrown.";
-        // Determine New Leader
-        let newLeaderName = candidate;
-
-        // If no candidate specified, highest weight betrayer
-        if (!newLeaderName) {
-            const betrayers = this.votes.filter(v => v.vote === 'BETRAY');
-            if (betrayers.length > 0) {
-                // Find biggest traitor
-                betrayers.sort((a, b) => {
-                    // Priority to Initiators? 
-                    return 0; // random for now
-                });
-                newLeaderName = betrayers[0].voter;
-            } else {
-                newLeaderName = "The Military"; // Fallback
-            }
-        }
-        outcomeMessage += ` All hail the new Leader: ${newLeaderName}!`;
-
-    } else {
-        outcomeMessage += "The Leader survives. Order is restored.";
-
-        // Repression Logic
-        const betrayers = this.votes.filter(v => v.vote === 'BETRAY');
-
-        // Automatic Purge of Top 2 Traitors (by Weight)
-        // Sort by weight descending
-        betrayers.sort((a, b) => {
-            const dA = this.roles.elites.find(e => e.name === a.voter);
-            const dB = this.roles.elites.find(e => e.name === b.voter);
-            return (dB ? dB.weight : 0) - (dA ? dA.weight : 0);
-        });
-
-        // Purge top 2
-        let purgedCount = 0;
-        betrayers.forEach(b => {
-            if (purgedCount < 2) {
-                this.roles.elites = this.roles.elites.filter(e => e.name !== b.voter);
-                purgedList.push(b.voter);
-                purgedCount++;
-            } else {
-                pardonedList.push(b.voter); // Failed rebels who survived
-            }
-        });
-        if (purgedCount > 0) outcomeMessage += ` ${purgedCount} Traitors Purged.`;
-
-        // Demote Citizens (Mock logic)
-        outcomeMessage += " Dissidents repressed.";
-    }
-
-    // Broadcast Result
-    this.channel.send({
-        type: 'ROUND_RESULT',
-        message: outcomeMessage,
-        success: !coupSuccess, // msg.success means "Regime Won"
-        stats: {
-            loyal: loyalPercent,
-            betray: rebelPercent
-        },
-        purged: purgedList,
-        pardoned: pardonedList
-    });
-
-    this.roundNumber++;
-}
-
-// --- UI Updates ---
-
-updateUI() {
-    const screens = {
-        setup: document.getElementById('screen-setup'),
-        lobby: document.getElementById('screen-lobby'),
-        game: document.getElementById('screen-game')
-    };
-
-    // Hide all first
-    Object.values(screens).forEach(el => {
-        if (el) el.classList.add('hidden');
-    });
-
-    // Show current
-    if (this.state === 'SETUP') {
-        if (screens.setup) screens.setup.classList.remove('hidden');
-    } else if (this.state === 'LOBBY') {
-        if (screens.lobby) screens.lobby.classList.remove('hidden');
-        const codeEl = document.getElementById('display-code');
-        if (codeEl) codeEl.innerText = this.sessionCode;
-        const countEl = document.getElementById('player-count');
-        if (countEl) countEl.innerText = this.players.length;
-
-        // CRITICAL: Render pie chart with actual player names
-        if (typeof renderPieChart === 'function') {
-            renderPieChart(this.players);
-        }
-    } else if (this.state === 'ACTIVE') {
-        if (screens.game) screens.game.classList.remove('hidden');
-        // Show Header Indicators
-        const header = document.querySelector('.session-header');
-        if (header) header.classList.remove('hidden');
-        const roundEl = document.getElementById('display-round').innerText = this.roundNumber;
-        const phaseEl = document.getElementById('display-phase').innerText = this.phase;
-    }
-}
-
-startLobby() {
-    this.state = 'LOBBY';
-
-    // Create session on server if using WebSocket
-    if (this.channel && typeof this.channel.createSession === 'function') {
+    // --- Core Game Loop ---
+    beginSimulation() {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:407', message: 'Host creating session on server', data: { sessionCode: this.sessionCode, channelConnected: this.channel.connected, hasCreateSession: typeof this.channel.createSession === 'function' }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'G' }) }).catch(() => { });
+        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:198', message: 'beginSimulation called', data: { playerCount: this.players.length, currentState: this.state }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
         // #endregion
-        this.channel.createSession(this.sessionCode);
+        if (this.players.length < 3) {
+            // alert("Need at least 3 players to start!");
+            // For testing, allowing 1 player override
+        }
+
+        this.state = 'ACTIVE';
+        this.roundNumber = 1;
+        this.assignRoles();
+        this.startPhase('ALLOCATION');
     }
 
-    this.updateUI();
-}
+    assignRoles() {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:210', message: 'assignRoles called', data: { playerCount: this.players.length, playerNames: this.players.map(p => p.name) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
+        // #endregion
+        // Shuffle players
+        const shuffled = [...this.players].sort(() => 0.5 - Math.random());
 
-startGame() {
-    this.beginSimulation();
-}
+        // 1. Leader
+        this.roles.leader = shuffled[0];
+        this.roles.leader.role = 'Leader';
 
-updatePlayerCountUI(count, newPlayerName) {
-    const el = document.getElementById('player-count');
-    if (el) el.innerText = count;
+        // 2. Elites (5 Fixed)
+        const eliteTypes = [
+            { id: 'General', name: 'Military', weight: 3 },
+            { id: 'SpyChief', name: 'Intelligence', weight: 2 },
+            { id: 'PoliceChief', name: 'Interior', weight: 2 },
+            { id: 'Oligarch', name: 'Economy', weight: 1 },
+            { id: 'Propagandist', name: 'Media', weight: 1 }
+        ];
 
-    // Add to list
-    const list = document.getElementById('player-list');
-    if (list && newPlayerName) {
-        const li = document.createElement('li');
-        li.innerText = `${newPlayerName} connected...`;
-        li.className = 'player-item-joined';
-        list.appendChild(li);
+        this.roles.elites = [];
+        let pIndex = 1;
+
+        // Assign Real Players to Elites first
+        for (let i = 0; i < eliteTypes.length; i++) {
+            if (pIndex < shuffled.length) {
+                const p = shuffled[pIndex++];
+                p.role = eliteTypes[i].name; // Just string name
+                this.roles.elites.push({
+                    name: p.name,
+                    role: eliteTypes[i].name,
+                    weight: eliteTypes[i].weight,
+                    type: eliteTypes[i].id
+                });
+            } else {
+                // Fill with Bots if not enough players? 
+                // For Minimum Viable, we assume players fill or we handle empty
+            }
+        }
+
+        // 3. Citizens (Rest)
+        this.roles.citizens = [];
+        while (pIndex < shuffled.length) {
+            const p = shuffled[pIndex++];
+            p.role = 'Citizen';
+            // Assign random class
+            const classes = ['Upper Class', 'Middle Class', 'Lower Class'];
+            p.class = classes[Math.floor(Math.random() * classes.length)];
+            this.roles.citizens.push(p);
+        }
+
+        // Notify Players of Roles
+        this.players.forEach(p => {
+            // Find detailed role info
+            let roleData = { role: p.role };
+            if (p.role === 'Citizen') {
+                const c = this.roles.citizens.find(c => c.name === p.name);
+                if (c) roleData.className = c.class;
+            }
+            if (this.roles.elites.find(e => e.name === p.name)) {
+                const e = this.roles.elites.find(e => e.name === p.name);
+                roleData.weight = e.weight;
+            }
+
+            const roleMsg = {
+                type: 'ROLE_ASSIGNMENT',
+                target: p.name,
+                role: p.role,
+                details: roleData
+            };
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:271', message: 'Sending ROLE_ASSIGNMENT', data: { target: roleMsg.target, role: roleMsg.role, channelConnected: this.channel?.connected, channelHasSocket: !!this.channel?.socket }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H2' }) }).catch(() => { });
+            // #endregion
+            this.channel.send(roleMsg);
+        });
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:278', message: 'assignRoles completed', data: { leader: this.roles.leader?.name, eliteCount: this.roles.elites.length, citizenCount: this.roles.citizens.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
+        // #endregion
     }
-}
+
+    startPhase(phase) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:296', message: 'startPhase called', data: { newPhase: phase, oldPhase: this.phase, state: this.state }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H1' }) }).catch(() => { });
+        // #endregion
+        clearInterval(this.timerInterval);
+
+        // Resolution Logic Check
+        if (phase === 'RESOLUTION' && this.phase === 'VOTING') {
+            this.resolveRound();
+        }
+
+        this.phase = phase;
+        let duration = 0;
+
+        switch (phase) {
+            case 'ALLOCATION':
+                duration = 90;
+                this.votes = [];
+                this.protestLevel = 0;
+                break;
+            case 'VOTING':
+                duration = 60;
+                break;
+            case 'RESOLUTION':
+                duration = 20;
+                break;
+            default:
+                duration = 10;
+        }
+
+        this.timeRemaining = duration;
+        this.updateTimerUI(duration);
+        this.broadcastState();
+        this.startTimer();
+    }
+
+    resolveRound() {
+        let outcomeMessage = `Round ${this.roundNumber} Result: `;
+
+        // Calculate Coup Power
+        let betrayWeight = 0;
+        let loyalWeight = 0;
+        let candidate = null;
+
+        // Sum Votes
+        this.votes.forEach(v => {
+            const elite = this.roles.elites.find(e => e.name === v.voter);
+            let weight = elite ? elite.weight : 0;
+
+            // External Offer Bonus
+            if (v.coupType === 'EXTERNAL') {
+                weight += 1.5; // Massive Bonus for Foreign Intervention
+            }
+
+            if (v.vote === 'BETRAY') {
+                betrayWeight += weight;
+                if (v.candidate) candidate = v.candidate;
+            } else {
+                loyalWeight += weight;
+            }
+        });
+
+        // Determine Outcome
+        // If External involved, threshold is lower? Or just weight added.
+        const totalWeight = betrayWeight + loyalWeight;
+        const rebelPercent = totalWeight > 0 ? Math.round((betrayWeight / totalWeight) * 100) : 0;
+        const loyalPercent = 100 - rebelPercent;
+
+        const coupSuccess = betrayWeight > loyalWeight;
+
+        let purgedList = [];
+        let pardonedList = [];
+
+        if (coupSuccess) {
+            outcomeMessage += "COUP SUCCEEDED! The Leader has been overthrown.";
+            // Determine New Leader
+            let newLeaderName = candidate;
+
+            // If no candidate specified, highest weight betrayer
+            if (!newLeaderName) {
+                const betrayers = this.votes.filter(v => v.vote === 'BETRAY');
+                if (betrayers.length > 0) {
+                    // Find biggest traitor
+                    betrayers.sort((a, b) => {
+                        // Priority to Initiators? 
+                        return 0; // random for now
+                    });
+                    newLeaderName = betrayers[0].voter;
+                } else {
+                    newLeaderName = "The Military"; // Fallback
+                }
+            }
+            outcomeMessage += ` All hail the new Leader: ${newLeaderName}!`;
+
+        } else {
+            outcomeMessage += "The Leader survives. Order is restored.";
+
+            // Repression Logic
+            const betrayers = this.votes.filter(v => v.vote === 'BETRAY');
+
+            // Automatic Purge of Top 2 Traitors (by Weight)
+            // Sort by weight descending
+            betrayers.sort((a, b) => {
+                const dA = this.roles.elites.find(e => e.name === a.voter);
+                const dB = this.roles.elites.find(e => e.name === b.voter);
+                return (dB ? dB.weight : 0) - (dA ? dA.weight : 0);
+            });
+
+            // Purge top 2
+            let purgedCount = 0;
+            betrayers.forEach(b => {
+                if (purgedCount < 2) {
+                    this.roles.elites = this.roles.elites.filter(e => e.name !== b.voter);
+                    purgedList.push(b.voter);
+                    purgedCount++;
+                } else {
+                    pardonedList.push(b.voter); // Failed rebels who survived
+                }
+            });
+            if (purgedCount > 0) outcomeMessage += ` ${purgedCount} Traitors Purged.`;
+
+            // Demote Citizens (Mock logic)
+            outcomeMessage += " Dissidents repressed.";
+        }
+
+        // Broadcast Result
+        this.channel.send({
+            type: 'ROUND_RESULT',
+            message: outcomeMessage,
+            success: !coupSuccess, // msg.success means "Regime Won"
+            stats: {
+                loyal: loyalPercent,
+                betray: rebelPercent
+            },
+            purged: purgedList,
+            pardoned: pardonedList
+        });
+
+        this.roundNumber++;
+    }
+
+    // --- UI Updates ---
+
+    updateUI() {
+        const screens = {
+            setup: document.getElementById('screen-setup'),
+            lobby: document.getElementById('screen-lobby'),
+            game: document.getElementById('screen-game')
+        };
+
+        // Hide all first
+        Object.values(screens).forEach(el => {
+            if (el) el.classList.add('hidden');
+        });
+
+        // Show current
+        if (this.state === 'SETUP') {
+            if (screens.setup) screens.setup.classList.remove('hidden');
+        } else if (this.state === 'LOBBY') {
+            if (screens.lobby) screens.lobby.classList.remove('hidden');
+            const codeEl = document.getElementById('display-code');
+            if (codeEl) codeEl.innerText = this.sessionCode;
+            const countEl = document.getElementById('player-count');
+            if (countEl) countEl.innerText = this.players.length;
+
+            // CRITICAL: Render pie chart with actual player names
+            if (typeof renderPieChart === 'function') {
+                renderPieChart(this.players);
+            }
+        } else if (this.state === 'ACTIVE') {
+            if (screens.game) screens.game.classList.remove('hidden');
+            // Show Header Indicators
+            const header = document.querySelector('.session-header');
+            if (header) header.classList.remove('hidden');
+            const roundEl = document.getElementById('display-round').innerText = this.roundNumber;
+            const phaseEl = document.getElementById('display-phase').innerText = this.phase;
+        }
+    }
+
+    startLobby() {
+        this.state = 'LOBBY';
+
+        // Create session on server if using WebSocket
+        if (this.channel && typeof this.channel.createSession === 'function') {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'game_engine.js:407', message: 'Host creating session on server', data: { sessionCode: this.sessionCode, channelConnected: this.channel.connected, hasCreateSession: typeof this.channel.createSession === 'function' }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'G' }) }).catch(() => { });
+            // #endregion
+            this.channel.createSession(this.sessionCode);
+        }
+
+        this.updateUI();
+    }
+
+    startGame() {
+        this.beginSimulation();
+    }
+
+    updatePlayerCountUI(count, newPlayerName) {
+        const el = document.getElementById('player-count');
+        if (el) el.innerText = count;
+
+        // Add to list
+        const list = document.getElementById('player-list');
+        if (list && newPlayerName) {
+            const li = document.createElement('li');
+            li.innerText = `${newPlayerName} connected...`;
+            li.className = 'player-item-joined';
+            list.appendChild(li);
+        }
+    }
 }
 
 // Global Instance

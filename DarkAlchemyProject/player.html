@@ -663,17 +663,9 @@
                 // #region agent log
                 fetch('http://127.0.0.1:7242/ingest/337209b4-c064-4f4f-9d1d-83736bceeff3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'player.html:652', message: 'Player received STATE_UPDATE', data: { phase: msg.phase, hasRoles: !!msg.roles, leader: msg.roles?.leader?.name, eliteCount: msg.roles?.elites?.length, citizenCount: msg.roles?.citizens?.length, myName: myName, myRole: myRole, screenWaitHidden: screenWait?.classList?.contains('hidden') }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'H3,H4,H5' }) }).catch(() => { });
                 // #endregion
-
-                // CRITICAL FIX: Only switch to dashboard if game has actually started
-                if (msg.phase !== 'LOBBY' && msg.phase !== 'SETUP') {
-                    screenWait.classList.add('hidden');
-                    screenDash.classList.remove('hidden');
-                } else {
-                    // Stay in waiting screen
-                    screenWait.classList.remove('hidden');
-                    screenDash.classList.add('hidden');
-                    return; // Don't process roles if in Lobby
-                }
+                // Game Update
+                screenWait.classList.add('hidden');
+                screenDash.classList.remove('hidden');
 
                 // Find My Role
                 let myRoleText = "Unknown";
