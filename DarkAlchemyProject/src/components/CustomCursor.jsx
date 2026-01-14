@@ -9,15 +9,21 @@ const CustomCursor = () => {
     const [isTouchDevice, setIsTouchDevice] = useState(false);
 
     useEffect(() => {
-        // Detect if device is touch-enabled (mobile/tablet)
+        // Detect if device is primarily a mobile/tablet (not a laptop with touchscreen)
+        // We check for: small screen OR primary input is coarse (finger/stylus) AND no hover
         const checkTouchDevice = () => {
-            return (
-                'ontouchstart' in window ||
-                navigator.maxTouchPoints > 0 ||
-                navigator.msMaxTouchPoints > 0 ||
-                window.matchMedia('(pointer: coarse)').matches ||
-                window.matchMedia('(hover: none)').matches
-            );
+            // Check if primary input is coarse (finger/stylus) - this indicates mobile/tablet
+            const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+            const hasNoHover = window.matchMedia('(hover: none)').matches;
+            
+            // Check screen size - mobile devices are typically smaller
+            const isSmallScreen = window.innerWidth <= 768 || window.innerHeight <= 768;
+            
+            // Only consider it a touch device if:
+            // 1. Primary input is coarse (finger) AND no hover capability (mobile/tablet)
+            // 2. OR it's a small screen device (likely mobile)
+            // This excludes laptops with touchscreens (which have fine pointer + hover)
+            return (hasCoarsePointer && hasNoHover) || (isSmallScreen && hasCoarsePointer);
         };
 
         const touchDevice = checkTouchDevice();
