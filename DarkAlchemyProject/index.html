@@ -1,78 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dark Alchemy</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sovereign</title>
+  <!-- GOOGLE FONTS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Roboto+Mono:wght@300;400&display=swap"
+    rel="stylesheet">
 </head>
 
 <body>
-    <!-- Custom Animated Cursor -->
-    <div id="custom-cursor">
-        <div class="cursor-ring"></div>
-        <div class="cursor-dot"></div>
-    </div>
-    <canvas id="glCanvas"></canvas>
-    <div class="main-container">
-        <!-- Frame Elements -->
-        <div class="frame">
-            <img src="assets/WindowFrame_5.svg" class="full-frame main-border" alt="">
-        </div>
-
-        <div class="content">
-            <header class="header">
-                <div class="title-container">
-                    <!-- Reverted Title -->
-                    <h1 class="title-text">HETAIROI</h1>
-                </div>
-                <!-- Reverted Subtitle/Tagline -->
-                <div class="subtitle">A Real-Time Classroom Simulation</div>
-                <div class="tagline">Experience power, loyalty, and betrayal</div>
-            </header>
-
-            <div class="factions-container">
-                <!-- Left Faction: Convene -->
-                <div class="faction-group left-group">
-                    <!-- Added Role Label -->
-                    <div class="role-label">SESSION CONTROL</div>
-
-                    <div class="circle-wrapper">
-                        <!-- Premium Authority Icon -->
-                        <img src="assets/icon_authority_pro.svg" class="magic-circle sigil-left" alt="Convene Circle">
-                    </div>
-
-                    <!-- Reverted Button Text -->
-                    <button class="alchemy-btn" onclick="window.location.href='session_control.html'">
-                        <img src="assets/button_pro.svg" class="btn-bg btn-bg-left" alt="">
-                        <span class="btn-text">CREATE SESSION</span>
-                    </button>
-                </div>
-
-                <!-- Right Faction: Regime -->
-                <div class="faction-group right-group">
-                    <!-- Added Role Label -->
-                    <div class="role-label">PLAYER ENTRY</div>
-
-                    <div class="circle-wrapper">
-                        <!-- Premium Player Icon -->
-                        <img src="assets/icon_player_pro.svg" class="magic-circle sigil-right" alt="Regime Circle">
-                    </div>
-
-                    <!-- Reverted Button Text -->
-                    <button class="alchemy-btn" onclick="window.location.href='player.html'">
-                        <img src="assets/button_pro.svg" class="btn-bg btn-bg-right" alt="">
-                        <span class="btn-text">JOIN GAME</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script src="background_anim.js"></script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 
 </html>
