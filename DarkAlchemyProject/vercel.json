@@ -1,6 +1,6 @@
 {
-    "buildCommand": "npx vite build",
+    "buildCommand": "ls -la && pwd && npm run build",
     "outputDirectory": "dist",
     "framework": null,
-    "installCommand": "npm install --include=dev && npm list vite"
+    "installCommand": "npm install"
 }
