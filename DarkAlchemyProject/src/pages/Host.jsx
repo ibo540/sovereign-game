@@ -765,7 +765,7 @@ const Host = () => {
                     {/* QR CODE - Top Right (Moved to accommodate Left Sidebar) */}
                     <motion.div style={{ position: 'absolute', top: '40px', right: '40px', zIndex: 50 }}>
                         <div className="qr-box" style={{ width: '140px', height: '140px', border: '1px solid rgba(255, 255, 255, 0.2)', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', padding: '10px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', boxShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
-                            <QRCodeSVG value={`https://dark-alchemy-server.onrender.com/?code=${sessionCode}`} size={100} bgColor={"transparent"} fgColor={"#ffffff"} />
+                            <QRCodeSVG value={`${window.location.origin}/join?code=${sessionCode}`} size={100} bgColor={"transparent"} fgColor={"#ffffff"} />
                             <div className="session-code-display" style={{ fontSize: '1rem', marginTop: '10px', color: '#fff', fontFamily: 'Roboto Mono' }}>{sessionCode}</div>
                         </div>
                     </motion.div>
