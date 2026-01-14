@@ -8,9 +8,6 @@ export function useGameEngine(role = 'host') {
         sessionCode: '----',
         playerCount: 0,
         roles: {},
-        sessionCode: '----',
-        playerCount: 0,
-        roles: {},
         eliminatedPlayers: [], // New: Track eliminated
         messages: [], // New: Chat Storage
         myName: localStorage.getItem('player_name') || null
@@ -102,8 +99,16 @@ export function useGameEngine(role = 'host') {
                 setGameState(prev => ({
                     ...prev,
                     allocation: msg.allocation,
-                    phase: 'VOTING_PHASE' // Example phase switch
+                    phase: 'VOTING_PHASE' // Transition to voting phase
                 }));
+                
+                // Broadcast phase change to all players
+                const socket = socketService.connect();
+                socket.emit('GAME_MESSAGE', {
+                    type: 'PHASE_CHANGE',
+                    phase: 'VOTING_PHASE',
+                    allocation: msg.allocation
+                });
             }
 
             // 4. VOTE UPDATE (From Elite -> Host)
@@ -198,7 +203,18 @@ export function useGameEngine(role = 'host') {
                     votes: {}, // Clear votes
                     result: null, // Clear result
                     judgmentExecuted: false, // Reset judgment flag
-                    messages: [] // Optional: Clear chat?
+                    messages: [], // Optional: Clear chat?
+                    resourceBonus: msg.resourceBonus || 0 // Store resource bonus for leader
+                }));
+            }
+
+            // 10. PHASE CHANGE (Synchronize phase across all clients)
+            if (msg.type === 'PHASE_CHANGE' && msg.phase) {
+                console.log("🔄 PHASE CHANGE:", msg.phase);
+                setGameState(prev => ({
+                    ...prev,
+                    phase: msg.phase,
+                    allocation: msg.allocation || prev.allocation // Update allocation if provided
                 }));
             }
 

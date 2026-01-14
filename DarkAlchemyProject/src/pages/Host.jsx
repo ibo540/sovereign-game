@@ -288,6 +288,7 @@ const Host = () => {
     const [currentRound, setCurrentRound] = useState(1);
     const [eliminatedPlayers, setEliminatedPlayers] = useState([]);
     const [gameOver, setGameOver] = useState(false);
+    const [resourceBonus, setResourceBonus] = useState(0); // Track resource bonus for next round
 
     const handleNextRound = () => {
         // --- GAME END CHECK ---
@@ -392,6 +393,8 @@ const Host = () => {
                 if (candidate) {
                     newLeader = candidate;
                     regimeChangeMsg = `EXTERNAL INTERVENTION. ${newLeader.name} INSTALLED AS LEADER. +50 RESOURCES ADDED.`;
+                    // Apply resource bonus for next round
+                    setResourceBonus(50);
                 }
             }
 
@@ -447,11 +450,15 @@ const Host = () => {
         }
 
         // Emitting START_ROUND clears state
-        socketService.socket.emit('GAME_MESSAGE', {
-            type: 'START_ROUND',
-            round: nextRound,
-            code: sessionCode,
-            resourceBonus // Pass this new field
+        import('../services/socket').then(({ socketService }) => {
+            socketService.socket.emit('GAME_MESSAGE', {
+                type: 'START_ROUND',
+                round: nextRound,
+                code: sessionCode,
+                resourceBonus: resourceBonus || 0 // Pass resource bonus (default to 0)
+            });
+            // Reset resource bonus after using it
+            setResourceBonus(0);
         });
 
         // If roles changed, Emit ROLES_ASSIGNED
@@ -460,11 +467,13 @@ const Host = () => {
             setMockRoles(newRoles);
 
             setTimeout(() => {
-                socketService.socket.emit('GAME_MESSAGE', {
-                    type: 'ROLES_ASSIGNED',
-                    roles: newRoles,
-                    code: sessionCode,
-                    phase: 'GAME_ACTIVE'
+                import('../services/socket').then(({ socketService }) => {
+                    socketService.socket.emit('GAME_MESSAGE', {
+                        type: 'ROLES_ASSIGNED',
+                        roles: newRoles,
+                        code: sessionCode,
+                        phase: 'GAME_ACTIVE'
+                    });
                 });
             }, 500); // Small delay to ensure client handles round reset first
         }
@@ -664,6 +673,20 @@ const Host = () => {
 
     // Calculate and Broadcast Result
     const broadcastResult = () => {
+        // VALIDATION: Check if all elites have voted
+        const eliteNames = elites.map(e => e.name);
+        const votedElites = Object.keys(gameState.votes || {}).filter(name => {
+            const roleStr = roles[name];
+            return roleStr && roleStr.startsWith('ELITE');
+        });
+
+        if (votedElites.length < eliteNames.length) {
+            const missingVotes = eliteNames.filter(name => !votedElites.includes(name));
+            setErrorMsg(`AWAITING VOTES FROM: ${missingVotes.join(', ')}`);
+            setTimeout(() => setErrorMsg(''), 5000);
+            return; // Don't reveal results until all elites vote
+        }
+
         setVotesRevealed(true);
 
         // Caluclate Scores

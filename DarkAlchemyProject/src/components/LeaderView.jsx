@@ -61,7 +61,7 @@ const LeaderView = ({ gameState, emit }) => {
         }
         setIsSubmitted(true);
         // CRITICAL FIX: Emit wrapped in GAME_MESSAGE so server relays it to Host/Others
-        emit('ALLOCATION_SUBMIT', { allocation });
+        emit('GAME_MESSAGE', { type: 'ALLOCATION_SUBMIT', allocation });
         console.log("CONFIRM BUDGET CLICKED - Sent ALLOCATION_SUBMIT");
     };
 
