@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "buildCommand": null,
-  "outputDirectory": "DarkAlchemyProject",
+  "buildCommand": "cd DarkAlchemyProject && npm install && npm run build",
+  "outputDirectory": "DarkAlchemyProject/dist",
+  "installCommand": "cd DarkAlchemyProject && npm install",
   "rewrites": [
     {
       "source": "/(.*)",
