@@ -136,51 +136,71 @@ const EliteView = ({ gameState, emit }) => {
     }
 
     return (
-        <div className="main-container elite-responsive-wrapper" style={{ minHeight: '100vh', padding: '20px' }}>
+        <div className="main-container elite-responsive-wrapper" style={{ minHeight: '100vh', padding: '20px', boxSizing: 'border-box', overflowX: 'hidden' }}>
             {/* Dynamic Style Injection for Body BG and Responsive Grid */}
             <style>{`
+                * {
+                    box-sizing: border-box;
+                }
+                html, body {
+                    overflow-x: hidden !important;
+                    max-width: 100vw !important;
+                }
                 body {
                     background: url('/assets/background_elite.png') no-repeat center center fixed !important;
                     background-size: cover !important;
+                    margin: 0;
+                    padding: 0;
                 }
                 .chart-bar-fill { transition: width 1s ease-out; }
 
                 /* DEFAULT MOBILE STYLES (Vertical Stack) */
                 .elite-responsive-wrapper {
-                    max-width: 650px;
+                    max-width: 100%;
                     margin: 0 auto;
+                    padding: 15px;
                 }
                 .elite-grid {
                     display: flex;
                     flex-direction: column;
-                    gap: 30px;
+                    gap: 25px;
                 }
                 .chat-section {
-                     height: 300px;
+                     height: 250px;
+                     max-height: 40vh;
                 }
 
                 /* LAPTOP/DESKTOP STYLES (Side-by-Side) */
                 @media (min-width: 1024px) {
                     .elite-responsive-wrapper {
-                        max-width: 1200px; /* Wider container */
-                        padding-top: 40px;
+                        max-width: 95vw;
+                        padding: 20px;
                     }
                     .elite-grid {
                         display: grid;
-                        grid-template-columns: 1fr 1fr; /* Two equal columns */
-                        gap: 50px;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 30px;
                         align-items: start;
                     }
                     .elite-header-group {
                         grid-column: 1 / -1;
                         text-align: center;
-                        margin-bottom: 20px;
+                        margin-bottom: 15px;
                     }
                     #elite-title {
-                        font-size: 4rem !important;
+                        font-size: 2.5rem !important;
+                        margin: 0 0 5px 0 !important;
                     }
                     .chat-section {
-                        height: 500px; /* Taller chat on desktop */
+                        height: 400px;
+                        max-height: 50vh;
+                    }
+                }
+                
+                /* Prevent overflow on smaller screens */
+                @media (max-width: 1023px) {
+                    #elite-title {
+                        font-size: 2rem !important;
                     }
                 }
             `}</style>
@@ -189,7 +209,7 @@ const EliteView = ({ gameState, emit }) => {
 
                 {/* HEADLINES (Full Width on Desktop) */}
                 <div className="elite-header-group">
-                    <h1 id="elite-title" style={{ color: themeColor, textShadow: `0 0 20px ${themeColor}`, fontSize: '3rem', margin: '0 0 10px 0', fontFamily: 'Cinzel Decorative', textAlign: 'center' }}>
+                    <h1 id="elite-title" style={{ color: themeColor, textShadow: `0 0 20px ${themeColor}`, fontSize: '2rem', margin: '0 0 8px 0', fontFamily: 'Cinzel Decorative', textAlign: 'center' }}>
                         ELITE {roleType}
                     </h1>
                     <div className="subtitle-row" style={{ display: 'flex', justifyContent: 'center', gap: '20px', color: '#888', gridGap: '20px', fontFamily: 'Roboto Mono', fontSize: '0.8rem' }}>
