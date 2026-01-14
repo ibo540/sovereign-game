@@ -6,34 +6,8 @@ const CustomCursor = () => {
     const cursorDotRef = useRef(null);
     const mouseParams = useRef({ x: -100, y: -100, targetX: -100, targetY: -100 });
     const [mounted, setMounted] = useState(false);
-    const [isTouchDevice, setIsTouchDevice] = useState(false);
 
     useEffect(() => {
-        // Detect if device is primarily a mobile/tablet (not a laptop with touchscreen)
-        // We check for: small screen OR primary input is coarse (finger/stylus) AND no hover
-        const checkTouchDevice = () => {
-            // Check if primary input is coarse (finger/stylus) - this indicates mobile/tablet
-            const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-            const hasNoHover = window.matchMedia('(hover: none)').matches;
-            
-            // Check screen size - mobile devices are typically smaller
-            const isSmallScreen = window.innerWidth <= 768 || window.innerHeight <= 768;
-            
-            // Only consider it a touch device if:
-            // 1. Primary input is coarse (finger) AND no hover capability (mobile/tablet)
-            // 2. OR it's a small screen device (likely mobile)
-            // This excludes laptops with touchscreens (which have fine pointer + hover)
-            return (hasCoarsePointer && hasNoHover) || (isSmallScreen && hasCoarsePointer);
-        };
-
-        const touchDevice = checkTouchDevice();
-        setIsTouchDevice(touchDevice);
-
-        // Don't initialize custom cursor on touch devices
-        if (touchDevice) {
-            return;
-        }
-
         setMounted(true);
 
         // 1. Inject Styles Programmatically (Failsafe)
@@ -42,10 +16,8 @@ const CustomCursor = () => {
             const style = document.createElement('style');
             style.id = styleId;
             style.innerHTML = `
-                /* HIDE SYSTEM CURSOR GLOBALLY (Desktop only) */
-                @media (hover: hover) and (pointer: fine) {
-                    * { cursor: none !important; }
-                }
+                /* HIDE SYSTEM CURSOR GLOBALLY */
+                * { cursor: none !important; }
                 
                 .custom-cursor-portal {
                     position: fixed;
@@ -89,15 +61,6 @@ const CustomCursor = () => {
                     width: 30px;
                     height: 30px;
                     background-color: rgba(255, 215, 0, 0.4);
-                }
-                
-                /* Hide custom cursor on touch devices */
-                @media (hover: none) and (pointer: coarse) {
-                    .custom-cursor-portal,
-                    .cursor-dot-portal {
-                        display: none !important;
-                    }
-                    * { cursor: auto !important; }
                 }
             `;
             document.head.appendChild(style);
@@ -151,8 +114,8 @@ const CustomCursor = () => {
         };
     }, []);
 
-    // Don't render custom cursor on touch devices
-    if (isTouchDevice || !mounted) return null;
+    // USE PORTAL TO ESCAPE REACT TREE
+    if (!mounted) return null;
 
     return ReactDOM.createPortal(
         <>
