@@ -165,7 +165,7 @@ const RevealBox = ({ focusedPlayer }) => {
 };
 
 // --- GAME SUMMARY COMPONENT ---
-const GameSummary = ({ result, rounds, survivors, leaderName }) => {
+const GameSummary = ({ result, rounds, survivors, leaderName, onClose }) => {
     const isLeaderWin = result?.winner === 'LEADER';
 
     return (
@@ -178,6 +178,43 @@ const GameSummary = ({ result, rounds, survivors, leaderName }) => {
                 color: '#fff'
             }}
         >
+            {/* CLOSE BUTTON */}
+            {onClose && (
+                <motion.button
+                    onClick={onClose}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    style={{
+                        position: 'absolute',
+                        top: '20px',
+                        right: '20px',
+                        width: '50px',
+                        height: '50px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        borderRadius: '50%',
+                        color: '#fff',
+                        fontSize: '2rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontFamily: 'Arial, sans-serif',
+                        zIndex: 2001,
+                        transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    }}
+                >
+                    ×
+                </motion.button>
+            )}
             <h1 style={{
                 fontSize: '5rem', fontFamily: 'Cinzel Decorative', color: isLeaderWin ? '#ffd700' : '#ff4444',
                 textShadow: isLeaderWin ? '0 0 50px #ffd700' : '0 0 50px #ff0000',
@@ -711,6 +748,7 @@ const Host = () => {
                     rounds={currentRound}
                     survivors={effectivePlayers.length - (gameState.eliminatedPlayers?.length || 0)}
                     leaderName={leader?.name || "UNKNOWN"}
+                    onClose={() => setGameOver(false)}
                 />
             )}
 
